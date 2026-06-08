@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routes import bank_users, health
+from app.api.routes import auth, bank_users, health
 from app.db.base import Base
 from app.db.session import engine
 
@@ -23,4 +23,5 @@ app = FastAPI(
 )
 
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(bank_users.router)

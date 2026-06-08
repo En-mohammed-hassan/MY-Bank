@@ -131,6 +131,19 @@ When running in Docker against Keycloak on the host machine, `docker-compose.yml
 
 ## API endpoints
 
+### Auth (proxied to Keycloak)
+
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/auth/login` | none — returns Keycloak tokens |
+| POST | `/auth/refresh` | none — body: `refresh_token` |
+| POST | `/auth/logout` | none — body: `refresh_token` |
+
+Frontend and Postman can call these on bank-user instead of Keycloak directly.
+Requires public client `bank-web` with **Direct access grants** enabled.
+
+### Staff management
+
 | Method | Path | Required roles |
 |--------|------|----------------|
 | GET | `/health` | none |

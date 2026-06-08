@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     keycloak_admin_client_id: str = "bank-user-service"
     keycloak_admin_client_secret: str = "change-me"
 
+    keycloak_public_client_id: str = "bank-web"
+    keycloak_public_client_secret: str | None = None
+
     keycloak_jwks_url: str = "http://localhost:8080/realms/bank/protocol/openid-connect/certs"
     keycloak_audience: str | None = "bank-api"
 

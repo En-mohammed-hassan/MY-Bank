@@ -1,0 +1,554 @@
+{
+  "info": {
+    "_postman_id": "my-bank-collection-001",
+    "name": "MY-Bank Platform",
+    "description": "Core Banking Simulator + Bank User Service + Keycloak auth.\n\n## Setup\n1. Import this collection into Postman.\n2. Open collection **Variables** and set `admin_password`.\n3. Run **Keycloak → Get Access Token** first.\n4. Then run Bank User or Core Banking requests.\n\n## Remote URLs (dental-care.me)\n- Auth: https://auth.dental-care.me\n- Core: https://core-api.dental-care.me\n- Users: https://users-api.dental-care.me",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "auth_base_url",
+      "value": "https://auth.dental-care.me"
+    },
+    {
+      "key": "core_base_url",
+      "value": "https://core-api.dental-care.me"
+    },
+    {
+      "key": "users_base_url",
+      "value": "https://users-api.dental-care.me"
+    },
+    {
+      "key": "keycloak_realm",
+      "value": "bank"
+    },
+    {
+      "key": "keycloak_client_id",
+      "value": "bank-web"
+    },
+    {
+      "key": "admin_username",
+      "value": "admin"
+    },
+    {
+      "key": "admin_password",
+      "value": "CHANGE_ME"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "keycloak_client_secret",
+      "value": "",
+      "description": "Leave empty for public client bank-web. Required if client authentication is ON."
+    },
+    {
+      "key": "staff_user_id",
+      "value": ""
+    },
+    {
+      "key": "cif",
+      "value": "CIF10001"
+    },
+    {
+      "key": "account_number",
+      "value": "ACC-10001-01"
+    },
+    {
+      "key": "from_account",
+      "value": "ACC-10001-02"
+    },
+    {
+      "key": "to_account",
+      "value": "ACC-10001-01"
+    }
+  ],
+  "item": [
+    {
+      "name": "Keycloak (Login / Logout / Refresh)",
+      "description": "Auth is handled by Keycloak, NOT bank-user service.\nbank-user only validates JWT on /bank-users routes.",
+      "item": [
+        {
+          "name": "Login - Get Access Token (password grant)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', data.access_token);",
+                  "    if (data.refresh_token) pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "    pm.test('Token received', () => pm.expect(data.access_token).to.be.a('string'));",
+                  "} else {",
+                  "    pm.test('Token request failed', () => pm.expect.fail(pm.response.text()));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{keycloak_client_id}}"
+                },
+                {
+                  "key": "username",
+                  "value": "{{admin_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{admin_password}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{keycloak_client_secret}}",
+                  "description": "Only if bank-web is confidential",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{auth_base_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/token",
+              "host": ["{{auth_base_url}}"],
+              "path": [
+                "realms",
+                "{{keycloak_realm}}",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            },
+            "description": "Login via Keycloak (OIDC token endpoint).\n\nFix unauthorized_client:\n1. Realm must be `bank`\n2. Client `bank-web` must exist in bank realm\n3. Direct access grants = ON\n4. If Client authentication = OFF (public): do NOT send client_secret\n5. If Client authentication = ON: enable client_secret body field above"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', data.access_token);",
+                  "    if (data.refresh_token) pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{keycloak_client_id}}"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{refresh_token}}"
+                }
+              ]
+            },
+            "url": "{{auth_base_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/token"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "client_id",
+                  "value": "{{keycloak_client_id}}"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{refresh_token}}"
+                }
+              ]
+            },
+            "url": "{{auth_base_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/logout",
+            "description": "Ends Keycloak session and invalidates refresh token."
+          }
+        },
+        {
+          "name": "OpenID Configuration (discovery)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{auth_base_url}}/realms/{{keycloak_realm}}/.well-known/openid-configuration",
+            "description": "Lists all OIDC endpoints (token, logout, jwks, etc.)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Core Banking",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{core_base_url}}/health"
+          }
+        },
+        {
+          "name": "Seed Demo Data",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{core_base_url}}/core/seed",
+            "description": "Reset and load demo CIF10001 / CIF10002 data. Run once before other core tests."
+          }
+        },
+        {
+          "name": "Get Customer by CIF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{core_base_url}}/core/customers/{{cif}}"
+          }
+        },
+        {
+          "name": "List Customer Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{core_base_url}}/core/customers/{{cif}}/accounts"
+          }
+        },
+        {
+          "name": "Get Account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{core_base_url}}/core/accounts/{{account_number}}"
+          }
+        },
+        {
+          "name": "List Account Transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{core_base_url}}/core/accounts/{{account_number}}/transactions?limit=20",
+              "host": ["{{core_base_url}}"],
+              "path": ["core", "accounts", "{{account_number}}", "transactions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Account Holds",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{core_base_url}}/core/accounts/{{account_number}}/holds"
+          }
+        },
+        {
+          "name": "Place Hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"100.00\",\n  \"reason\": \"MANUAL\",\n  \"reference\": \"postman-hold-1\"\n}"
+            },
+            "url": "{{core_base_url}}/core/accounts/{{account_number}}/holds"
+          }
+        },
+        {
+          "name": "Internal Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_account\": \"{{from_account}}\",\n  \"to_account\": \"{{to_account}}\",\n  \"amount\": \"500.00\",\n  \"idempotency_key\": \"postman-transfer-{{$timestamp}}\",\n  \"simulate\": \"success\"\n}"
+            },
+            "url": "{{core_base_url}}/core/transfers/internal"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bank User - Auth (via service)",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', data.access_token);",
+                  "    if (data.refresh_token) pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": "{{users_base_url}}/auth/login",
+            "description": "Login via bank-user BFF → Keycloak. No direct Keycloak URL needed."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', data.access_token);",
+                  "    if (data.refresh_token) pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": "{{users_base_url}}/auth/refresh"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": "{{users_base_url}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bank User (Staff)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{access_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{users_base_url}}/health"
+          }
+        },
+        {
+          "name": "Create Staff User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('staff_user_id', data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jane.support\",\n  \"email\": \"jane.support@bank.example\",\n  \"full_name\": \"Jane Support\",\n  \"role\": \"bank_support\",\n  \"department\": \"Operations\",\n  \"temporary_password\": \"TempPass123!\"\n}"
+            },
+            "url": "{{users_base_url}}/bank-users",
+            "description": "Requires platform_admin or bank_admin role. Creates user in Keycloak + DB."
+          }
+        },
+        {
+          "name": "List Staff Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{users_base_url}}/bank-users?status=active",
+              "host": ["{{users_base_url}}"],
+              "path": ["bank-users"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                },
+                {
+                  "key": "role",
+                  "value": "bank_support",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Staff User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{users_base_url}}/bank-users/{{staff_user_id}}"
+          }
+        },
+        {
+          "name": "Update Staff Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"bank_auditor\"\n}"
+            },
+            "url": "{{users_base_url}}/bank-users/{{staff_user_id}}/role"
+          }
+        },
+        {
+          "name": "Disable Staff User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"disabled\"\n}"
+            },
+            "url": "{{users_base_url}}/bank-users/{{staff_user_id}}/status"
+          }
+        },
+        {
+          "name": "Delete Staff User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{users_base_url}}/bank-users/{{staff_user_id}}",
+            "description": "Requires platform_admin role only."
+          }
+        }
+      ]
+    }
+  ]
+}
