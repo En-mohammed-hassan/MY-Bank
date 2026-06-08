@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Override image registry/org for your GitHub account or private registry.
+images:
+  - name: ghcr.io/example/my-bank/core-banking
+    newName: ghcr.io/En-mohammed-hassan/my-bank/core-banking
+    newTag: latest
+  - name: ghcr.io/example/my-bank/bank-user
+    newName: ghcr.io/En-mohammed-hassan/my-bank/bank-user
+    newTag: latest
+
+patches:
+  - path: patch-replicas.yaml

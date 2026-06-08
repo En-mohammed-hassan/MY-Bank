@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: my-bank
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: my-bank
+
+resources:
+  - namespace.yaml
+  - postgres/configmap-init.yaml
+  - postgres/secret.yaml
+  - postgres/statefulset.yaml
+  - postgres/service.yaml
+  - core-banking/secret.yaml
+  - core-banking/deployment.yaml
+  - core-banking/service.yaml
+  - bank-user/secret.yaml
+  - bank-user/deployment.yaml
+  - bank-user/service.yaml
+  - ingress.yaml
+
+images:
+  - name: ghcr.io/example/my-bank/core-banking
+    newName: ghcr.io/example/my-bank/core-banking
+    newTag: latest
+  - name: ghcr.io/example/my-bank/bank-user
+    newName: ghcr.io/example/my-bank/bank-user
+    newTag: latest

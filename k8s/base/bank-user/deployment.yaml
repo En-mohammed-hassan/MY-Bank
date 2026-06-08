@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bank-user
+  labels:
+    app.kubernetes.io/name: bank-user
+    app.kubernetes.io/part-of: my-bank
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bank-user
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bank-user
+        app.kubernetes.io/part-of: my-bank
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres -U "$POSTGRES_USER" -d postgres; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+      containers:
+        - name: bank-user
+          image: ghcr.io/example/my-bank/bank-user:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: bank-user-db
+            - secretRef:
+                name: bank-user-keycloak
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi

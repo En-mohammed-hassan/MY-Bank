@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-banking
+  labels:
+    app.kubernetes.io/name: core-banking
+    app.kubernetes.io/part-of: my-bank
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: core-banking
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: core-banking
+        app.kubernetes.io/part-of: my-bank
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres -U "$POSTGRES_USER" -d postgres; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+      containers:
+        - name: core-banking
+          image: ghcr.io/example/my-bank/core-banking:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: core-banking-db
+                  key: DATABASE_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi

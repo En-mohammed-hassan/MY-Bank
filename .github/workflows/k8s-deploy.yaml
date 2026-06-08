@@ -1,0 +1,99 @@
+name: Build and Deploy to Kubernetes
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/my-bank
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      core_banking_image: ${{ steps.meta-core.outputs.tags }}
+      bank_user_image: ${{ steps.meta-user.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata (core-banking)
+        id: meta-core
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/core-banking
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and push core-banking
+        uses: docker/build-push-action@v6
+        with:
+          context: ./bank simulator
+          push: true
+          tags: ${{ steps.meta-core.outputs.tags }}
+          labels: ${{ steps.meta-core.outputs.labels }}
+
+      - name: Docker metadata (bank-user)
+        id: meta-user
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/bank-user
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and push bank-user
+        uses: docker/build-push-action@v6
+        with:
+          context: ./b-user
+          push: true
+          tags: ${{ steps.meta-user.outputs.tags }}
+          labels: ${{ steps.meta-user.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/my-bank
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Patch prod overlay images
+        run: |
+          cd k8s/overlays/prod
+          kustomize edit set image \
+            ghcr.io/example/my-bank/core-banking=${{ env.IMAGE_PREFIX }}/core-banking:latest \
+            ghcr.io/example/my-bank/bank-user=${{ env.IMAGE_PREFIX }}/bank-user:latest
+
+      - name: Deploy to cluster
+        run: kubectl apply -k k8s/overlays/prod
+
+      - name: Wait for rollouts
+        run: |
+          kubectl rollout status deployment/core-banking -n my-bank --timeout=180s
+          kubectl rollout status deployment/bank-user -n my-bank --timeout=180s
