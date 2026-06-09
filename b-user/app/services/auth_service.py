@@ -10,17 +10,11 @@ from app.schemas.auth import LogoutResponse, TokenResponse
 class AuthService:
     @property
     def _token_url(self) -> str:
-        return (
-            f"{settings.keycloak_server_url.rstrip('/')}/realms/{settings.keycloak_realm}"
-            "/protocol/openid-connect/token"
-        )
+        return settings.keycloak_token_url
 
     @property
     def _logout_url(self) -> str:
-        return (
-            f"{settings.keycloak_server_url.rstrip('/')}/realms/{settings.keycloak_realm}"
-            "/protocol/openid-connect/logout"
-        )
+        return settings.keycloak_logout_url
 
     def _public_client_data(self) -> dict[str, str]:
         data = {"client_id": settings.keycloak_public_client_id}

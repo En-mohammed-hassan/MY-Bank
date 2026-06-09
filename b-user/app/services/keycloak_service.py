@@ -23,10 +23,7 @@ class KeycloakService:
         if self._access_token and time.time() < self._token_expires_at - 30:
             return self._access_token
 
-        token_url = (
-            f"{settings.keycloak_server_url.rstrip('/')}/realms/{settings.keycloak_realm}"
-            "/protocol/openid-connect/token"
-        )
+        token_url = settings.keycloak_token_url
         response = client.post(
             token_url,
             data={

@@ -45,6 +45,29 @@ def _fetch_jwks() -> dict[str, Any]:
     return _jwks_cache
 
 
+def _token_audiences(claims: dict[str, Any]) -> frozenset[str]:
+    aud = claims.get("aud")
+    if aud is None:
+        return frozenset()
+    if isinstance(aud, str):
+        return frozenset({aud})
+    return frozenset(aud)
+
+
+def _validate_token_audience(claims: dict[str, Any]) -> None:
+    """bank-web login tokens use aud=account; optional KEYCLOAK_AUDIENCE adds stricter check."""
+    audiences = _token_audiences(claims)
+    allowed = {settings.keycloak_public_client_id, "account"}
+    if settings.keycloak_audience:
+        allowed.add(settings.keycloak_audience)
+
+    if audiences and not audiences.intersection(allowed):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token audience",
+        )
+
+
 def _decode_token(token: str) -> dict[str, Any]:
     try:
         jwks = _fetch_jwks()
@@ -58,16 +81,14 @@ def _decode_token(token: str) -> dict[str, Any]:
             )
 
         rsa_key = jwk.construct(key)
-        options = {"verify_aud": bool(settings.keycloak_audience)}
         decode_kwargs: dict[str, Any] = {
             "algorithms": [key.get("alg", "RS256")],
             "issuer": settings.keycloak_issuer,
-            "options": options,
+            "options": {"verify_aud": False},
         }
-        if settings.keycloak_audience:
-            decode_kwargs["audience"] = settings.keycloak_audience
-
-        return jwt.decode(token, rsa_key, **decode_kwargs)
+        claims = jwt.decode(token, rsa_key, **decode_kwargs)
+        _validate_token_audience(claims)
+        return claims
     except ExpiredSignatureError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
