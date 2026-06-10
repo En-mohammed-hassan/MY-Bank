@@ -103,7 +103,10 @@ Assign service account roles:
 
 1. Open client → **Service account roles**
 2. Client roles → filter `realm-management`
-3. Assign: `manage-users`, `view-users`, `query-users`
+3. Assign: `manage-users`, `view-users`, `query-users`, `view-realm`
+
+Without `view-realm`, user creation can succeed in Keycloak but staff realm roles
+(`platform_admin`, `bank_support`, etc.) will not be assigned.
 
 ### 4. API / frontend clients (later)
 

@@ -48,6 +48,35 @@ class KeycloakService:
         token = self._ensure_token(client)
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
+    def _resolve_created_user_id(
+        self, client: httpx.Client, response: httpx.Response, username: str
+    ) -> UUID:
+        location = response.headers.get("Location", "")
+        if location:
+            candidate = location.rstrip("/").split("/")[-1]
+            try:
+                return UUID(candidate)
+            except ValueError:
+                pass
+
+        lookup = client.get(
+            f"{settings.keycloak_admin_base_url}/users",
+            params={"username": username, "exact": "true"},
+            headers=self._auth_headers(client),
+        )
+        if lookup.status_code != 200:
+            raise KeycloakError(
+                f"User created but ID lookup failed: {lookup.text}",
+                status_code=lookup.status_code,
+            )
+        users = lookup.json()
+        if not users:
+            raise KeycloakError(
+                "User created but Keycloak returned no Location header and username lookup was empty",
+                status_code=500,
+            )
+        return UUID(users[0]["id"])
+
     def create_user(
         self,
         *,
@@ -92,17 +121,49 @@ class KeycloakService:
                     status_code=response.status_code,
                 )
 
-            location = response.headers.get("Location", "")
-            user_id_str = location.rstrip("/").split("/")[-1]
-            user_id = UUID(user_id_str)
-            self.assign_realm_role(client, user_id, role)
+            user_id = self._resolve_created_user_id(client, response, username)
+            try:
+                self._set_staff_realm_role(client, user_id, role)
+            except KeycloakError:
+                try:
+                    self.delete_user(user_id)
+                except KeycloakError:
+                    pass
+                raise
             return user_id
+
+    def _role_mapping_payload(self, role_rep: dict[str, Any]) -> dict[str, Any]:
+        role_id = role_rep.get("id")
+        role_name = role_rep.get("name")
+        if not role_id or not role_name:
+            raise KeycloakError(
+                f"Invalid realm role representation for '{role_rep}': missing id or name",
+                status_code=500,
+            )
+        return {
+            "id": str(role_id),
+            "name": str(role_name),
+            "composite": bool(role_rep.get("composite", False)),
+            "clientRole": False,
+        }
+
+    def _verify_realm_role_assigned(
+        self, client: httpx.Client, user_id: UUID, role_name: str
+    ) -> None:
+        assigned = self._get_user_realm_roles(client, user_id)
+        if any(r.get("name") == role_name for r in assigned):
+            return
+        raise KeycloakError(
+            f"Realm role '{role_name}' was not assigned to user {user_id}",
+            status_code=500,
+        )
 
     def assign_realm_role(self, client: httpx.Client, user_id: UUID, role: BankStaffRole) -> None:
         role_rep = self._get_realm_role(client, role.value)
+        payload = self._role_mapping_payload(role_rep)
         response = client.post(
             f"{settings.keycloak_admin_base_url}/users/{user_id}/role-mappings/realm",
-            json=[role_rep],
+            json=[payload],
             headers=self._auth_headers(client),
         )
         if response.status_code not in (204, 200):
@@ -110,27 +171,33 @@ class KeycloakService:
                 f"Failed to assign realm role: {response.text}",
                 status_code=response.status_code,
             )
+        self._verify_realm_role_assigned(client, user_id, role.value)
+
+    def _set_staff_realm_role(
+        self, client: httpx.Client, user_id: UUID, role: BankStaffRole
+    ) -> None:
+        current_roles = self._get_user_realm_roles(client, user_id)
+        staff_role_names = {staff_role.value for staff_role in BankStaffRole}
+        staff_roles = [r for r in current_roles if r.get("name") in staff_role_names]
+
+        if staff_roles:
+            response = client.request(
+                "DELETE",
+                f"{settings.keycloak_admin_base_url}/users/{user_id}/role-mappings/realm",
+                json=staff_roles,
+                headers=self._auth_headers(client),
+            )
+            if response.status_code not in (204, 200):
+                raise KeycloakError(
+                    f"Failed to remove old realm roles: {response.text}",
+                    status_code=response.status_code,
+                )
+
+        self.assign_realm_role(client, user_id, role)
 
     def replace_realm_role(self, user_id: UUID, new_role: BankStaffRole) -> None:
         with httpx.Client(timeout=30.0) as client:
-            current_roles = self._get_user_realm_roles(client, user_id)
-            staff_role_names = {role.value for role in BankStaffRole}
-            staff_roles = [r for r in current_roles if r.get("name") in staff_role_names]
-
-            if staff_roles:
-                response = client.request(
-                    "DELETE",
-                    f"{settings.keycloak_admin_base_url}/users/{user_id}/role-mappings/realm",
-                    json=staff_roles,
-                    headers=self._auth_headers(client),
-                )
-                if response.status_code not in (204, 200):
-                    raise KeycloakError(
-                        f"Failed to remove old realm roles: {response.text}",
-                        status_code=response.status_code,
-                    )
-
-            self.assign_realm_role(client, user_id, new_role)
+            self._set_staff_realm_role(client, user_id, new_role)
 
     def set_user_enabled(self, user_id: UUID, enabled: bool) -> None:
         with httpx.Client(timeout=30.0) as client:

@@ -66,6 +66,7 @@ def list_bank_users(
         )
     ),
 ) -> BankStaffListResponse:
+    """List staff profiles stored in the app database (not every Keycloak user)."""
     staff_list = list_staff(db, role=role, status=status_filter)
     items = [_staff_response(staff) for staff in staff_list]
     return BankStaffListResponse(items=items, total=len(items))

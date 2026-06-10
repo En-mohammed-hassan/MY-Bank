@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.bank_staff import BankStaff
@@ -70,6 +71,19 @@ def create_staff(db: Session, payload: BankStaffCreateRequest) -> BankStaff:
         db.commit()
         db.refresh(staff)
         return staff
+    except IntegrityError as exc:
+        db.rollback()
+        if keycloak_user_id is not None:
+            try:
+                keycloak_service.delete_user(keycloak_user_id)
+            except KeycloakError:
+                pass
+        raise StaffAlreadyExistsError(
+            "Staff user with this email or username already exists"
+        ) from exc
+    except KeycloakError:
+        db.rollback()
+        raise
     except Exception:
         db.rollback()
         if keycloak_user_id is not None:
@@ -82,13 +96,12 @@ def create_staff(db: Session, payload: BankStaffCreateRequest) -> BankStaff:
 
 def update_staff_role(db: Session, user_id: UUID, role: BankStaffRole) -> BankStaff:
     staff = get_staff_by_id(db, user_id)
-    if staff.role == role.value:
-        return staff
-
+    # Always sync Keycloak — DB role may match while KC only has default-roles-bank.
     keycloak_service.replace_realm_role(staff.keycloak_user_id, role)
-    staff.role = role.value
-    db.commit()
-    db.refresh(staff)
+    if staff.role != role.value:
+        staff.role = role.value
+        db.commit()
+        db.refresh(staff)
     return staff
 
 
