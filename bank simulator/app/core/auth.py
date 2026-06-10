@@ -17,7 +17,7 @@ _jwks_cache: dict[str, Any] | None = None
 _jwks_fetched_at: float = 0.0
 _JWKS_TTL_SECONDS = 300
 
-_ADMIN_ROLES = frozenset({"platform_admin", "bank_admin"})
+_ADMIN_ROLES = frozenset({"admin"})
 
 
 @dataclass(frozen=True)

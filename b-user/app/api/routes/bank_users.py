@@ -42,7 +42,7 @@ def _handle_keycloak_error(exc: KeycloakError) -> HTTPException:
 def create_bank_user(
     payload: BankStaffCreateRequest,
     db: Session = Depends(get_db),
-    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.PLATFORM_ADMIN, BankStaffRole.BANK_ADMIN)),
+    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.ADMIN, BankStaffRole.SUPERVISOR)),
 ) -> BankStaffResponse:
     try:
         staff = create_staff(db, payload)
@@ -60,9 +60,9 @@ def list_bank_users(
     db: Session = Depends(get_db),
     _: AuthenticatedUser = Depends(
         require_roles(
-            BankStaffRole.PLATFORM_ADMIN,
-            BankStaffRole.BANK_ADMIN,
-            BankStaffRole.BANK_SUPPORT,
+            BankStaffRole.ADMIN,
+            BankStaffRole.SUPERVISOR,
+            BankStaffRole.RETAIL,
         )
     ),
 ) -> BankStaffListResponse:
@@ -78,9 +78,9 @@ def get_bank_user(
     db: Session = Depends(get_db),
     _: AuthenticatedUser = Depends(
         require_roles(
-            BankStaffRole.PLATFORM_ADMIN,
-            BankStaffRole.BANK_ADMIN,
-            BankStaffRole.BANK_SUPPORT,
+            BankStaffRole.ADMIN,
+            BankStaffRole.SUPERVISOR,
+            BankStaffRole.RETAIL,
         )
     ),
 ) -> BankStaffResponse:
@@ -96,7 +96,7 @@ def patch_bank_user_role(
     user_id: UUID,
     payload: BankStaffRoleUpdateRequest,
     db: Session = Depends(get_db),
-    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.PLATFORM_ADMIN, BankStaffRole.BANK_ADMIN)),
+    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.ADMIN, BankStaffRole.SUPERVISOR)),
 ) -> BankStaffResponse:
     try:
         staff = update_staff_role(db, user_id, payload.role)
@@ -112,7 +112,7 @@ def patch_bank_user_status(
     user_id: UUID,
     payload: BankStaffStatusUpdateRequest,
     db: Session = Depends(get_db),
-    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.PLATFORM_ADMIN, BankStaffRole.BANK_ADMIN)),
+    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.ADMIN, BankStaffRole.SUPERVISOR)),
 ) -> BankStaffResponse:
     try:
         staff = update_staff_status(db, user_id, payload.status)
@@ -127,7 +127,7 @@ def patch_bank_user_status(
 def delete_bank_user(
     user_id: UUID,
     db: Session = Depends(get_db),
-    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.PLATFORM_ADMIN)),
+    _: AuthenticatedUser = Depends(require_roles(BankStaffRole.ADMIN)),
 ) -> None:
     try:
         delete_staff(db, user_id)

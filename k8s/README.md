@@ -111,26 +111,61 @@ Workflow: `.github/workflows/k8s-deploy.yaml`
 
 On every push to `main`:
 
-1. Build Docker images for both services
-2. Push to **GitHub Container Registry** (`ghcr.io`)
-3. `kubectl apply -k k8s/overlays/prod` on your cluster
+1. **build-and-push** (GitHub-hosted): build images and push to **GHCR**
+2. **deploy** (self-hosted runner on your k3s server): `kubectl apply`, restart pods, wait for rollouts
 
-### Required GitHub secrets
+You can also trigger the pipeline manually via **Actions → Run workflow**.
 
-| Secret | Description |
-|--------|-------------|
-| `KUBE_CONFIG` | Full kubeconfig file content (base64 or raw YAML) |
+### One-time: install self-hosted runner on your server
 
-Create a deploy service account on the cluster:
+The deploy job must run **on the same Linux machine as k3s** (no public IP or Cloudflare tunnel needed).
+
+1. GitHub repo → **Settings** → **Actions** → **Runners** → **New self-hosted runner**
+2. Choose **Linux** and **x64**
+3. SSH into your server and run the commands GitHub shows, for example:
 
 ```bash
-kubectl create serviceaccount github-deploy -n my-bank
-kubectl create clusterrolebinding github-deploy-admin \
-  --clusterrole=cluster-admin \
-  --serviceaccount=my-bank:github-deploy
+# Create a folder for the runner
+mkdir -p ~/actions-runner && cd ~/actions-runner
+
+# Download (use the exact URL from GitHub — version may differ)
+curl -o actions-runner-linux-x64.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-linux-x64-2.321.0.tar.gz
+tar xzf actions-runner-linux-x64.tar.gz
+
+# Configure (paste the token from GitHub)
+./config.sh --url https://github.com/YOUR_USER/MY-Bank --token YOUR_TOKEN
+
+# Install and start as a service (survives reboot)
+sudo ./svc.sh install
+sudo ./svc.sh start
 ```
 
-Generate a long-lived token (or use projected token + RBAC with limited permissions in production), then embed in kubeconfig for the Actions secret.
+4. Back in GitHub → **Runners**, confirm the runner shows **Idle** (green).
+
+**Runner user must read k3s kubeconfig.** The workflow runs:
+
+```bash
+sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/config
+```
+
+If deploy fails with permission denied, allow passwordless read for the runner user:
+
+```bash
+sudo visudo
+# Add (replace runner-user with the user that runs the service):
+runner-user ALL=(ALL) NOPASSWD: /usr/bin/cat /etc/rancher/k3s/k3s.yaml
+```
+
+Or run the runner service as root (simpler, less ideal for production).
+
+### Secrets
+
+| Secret | Required? | Description |
+|--------|-----------|-------------|
+| `KUBE_CONFIG` | **No** | Not used — deploy uses local k3s kubeconfig |
+| `GITHUB_TOKEN` | Auto | Used by build job to push to GHCR |
+
+Optional: create a dedicated deploy service account with limited RBAC instead of the default k3s admin kubeconfig.
 
 ### Make GHCR images pullable (private repos)
 

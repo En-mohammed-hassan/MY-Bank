@@ -12,6 +12,6 @@ router = APIRouter(prefix="/core", tags=["seed"])
 @router.post("/seed")
 def seed_database(
     db: Session = Depends(get_db),
-    _user=Depends(require_roles(BankStaffRole.PLATFORM_ADMIN, BankStaffRole.BANK_ADMIN)),
+    _user=Depends(require_roles(BankStaffRole.ADMIN)),
 ) -> dict:
     return seed_demo_data(db)

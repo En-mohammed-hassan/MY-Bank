@@ -84,11 +84,9 @@ Create realm: `bank`
 
 Create these realm roles:
 
-- `platform_admin`
-- `bank_admin`
-- `bank_support`
-- `bank_auditor`
-- `relationship_manager`
+- `admin`
+- `supervisor`
+- `retail`
 
 ### 3. Service account client (Admin API)
 
@@ -115,7 +113,7 @@ Without `view-realm`, user creation can succeed in Keycloak but staff realm role
 
 ### 5. Bootstrap admin user
 
-Create a user in Keycloak manually (or via Admin Console) with role `platform_admin`. Use that account to obtain tokens for calling this service.
+Create a user in Keycloak manually (or via Admin Console) with role `admin`. Use that account to obtain tokens for calling this service.
 
 ## Environment variables
 

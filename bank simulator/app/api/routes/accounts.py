@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.core.auth import require_authenticated
+from app.core.auth import require_roles
+from app.schemas.enums import BankStaffRole
 from app.models.account import Account
 from app.models.hold import AccountHold
 from app.models.transaction import Transaction
@@ -15,11 +16,18 @@ from app.schemas.transaction import TransactionListResponse, TransactionResponse
 from app.services.balance_service import account_to_response
 from app.services.transfer_service import TransferError, place_hold
 
-router = APIRouter(prefix="/core", tags=["accounts"], dependencies=[Depends(require_authenticated)])
+router = APIRouter(prefix="/core", tags=["accounts"])
+
+_ALL_STAFF = (BankStaffRole.ADMIN, BankStaffRole.SUPERVISOR, BankStaffRole.RETAIL)
+_WRITE_STAFF = (BankStaffRole.ADMIN, BankStaffRole.SUPERVISOR)
 
 
 @router.get("/accounts/{account_number}", response_model=AccountResponse)
-def get_account(account_number: str, db: Session = Depends(get_db)) -> AccountResponse:
+def get_account(
+    account_number: str,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles(*_ALL_STAFF)),
+) -> AccountResponse:
     account = db.query(Account).filter(Account.account_number == account_number).first()
     if not account:
         raise HTTPException(status_code=404, detail=f"Account {account_number} not found")
@@ -30,6 +38,7 @@ def get_account(account_number: str, db: Session = Depends(get_db)) -> AccountRe
 def list_account_transactions(
     account_number: str,
     db: Session = Depends(get_db),
+    _=Depends(require_roles(*_ALL_STAFF)),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     txn_code: TxnCode | None = None,
@@ -70,6 +79,7 @@ def list_account_transactions(
 def list_account_holds(
     account_number: str,
     db: Session = Depends(get_db),
+    _=Depends(require_roles(*_ALL_STAFF)),
     active_only: bool = Query(default=True),
 ) -> HoldListResponse:
     account = db.query(Account).filter(Account.account_number == account_number).first()
@@ -94,6 +104,7 @@ def create_account_hold(
     account_number: str,
     body: HoldCreateRequest,
     db: Session = Depends(get_db),
+    _=Depends(require_roles(*_WRITE_STAFF)),
 ) -> HoldResponse:
     try:
         hold = place_hold(

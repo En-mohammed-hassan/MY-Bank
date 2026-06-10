@@ -2,11 +2,9 @@ from enum import StrEnum
 
 
 class BankStaffRole(StrEnum):
-    PLATFORM_ADMIN = "platform_admin"
-    BANK_ADMIN = "bank_admin"
-    BANK_SUPPORT = "bank_support"
-    BANK_AUDITOR = "bank_auditor"
-    RELATIONSHIP_MANAGER = "relationship_manager"
+    ADMIN = "admin"
+    SUPERVISOR = "supervisor"
+    RETAIL = "retail"
 
 
 class StaffStatus(StrEnum):

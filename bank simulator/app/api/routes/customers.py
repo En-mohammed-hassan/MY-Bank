@@ -2,18 +2,25 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.core.auth import require_authenticated
+from app.core.auth import require_roles
+from app.schemas.enums import BankStaffRole
 from app.models.account import Account
 from app.models.customer import Customer
 from app.schemas.account import AccountListResponse, AccountResponse
 from app.schemas.customer import CustomerResponse
 from app.services.balance_service import account_to_response
 
-router = APIRouter(prefix="/core", tags=["customers"], dependencies=[Depends(require_authenticated)])
+router = APIRouter(prefix="/core", tags=["customers"])
+
+_ALL_STAFF = (BankStaffRole.ADMIN, BankStaffRole.SUPERVISOR, BankStaffRole.RETAIL)
 
 
 @router.get("/customers/{cif}", response_model=CustomerResponse)
-def get_customer(cif: str, db: Session = Depends(get_db)) -> CustomerResponse:
+def get_customer(
+    cif: str,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles(*_ALL_STAFF)),
+) -> CustomerResponse:
     customer = db.query(Customer).filter(Customer.cif == cif).first()
     if not customer:
         raise HTTPException(status_code=404, detail=f"Customer {cif} not found")
@@ -21,7 +28,11 @@ def get_customer(cif: str, db: Session = Depends(get_db)) -> CustomerResponse:
 
 
 @router.get("/customers/{cif}/accounts", response_model=AccountListResponse)
-def list_customer_accounts(cif: str, db: Session = Depends(get_db)) -> AccountListResponse:
+def list_customer_accounts(
+    cif: str,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles(*_ALL_STAFF)),
+) -> AccountListResponse:
     customer = db.query(Customer).filter(Customer.cif == cif).first()
     if not customer:
         raise HTTPException(status_code=404, detail=f"Customer {cif} not found")

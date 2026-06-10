@@ -61,11 +61,12 @@ jobs:
           tags: ${{ steps.meta-user.outputs.tags }}
           labels: ${{ steps.meta-user.outputs.labels }}
 
-  # Runs only after you add the KUBE_CONFIG secret in GitHub repo settings.
+  # Runs on a self-hosted runner installed on the same server as k3s.
+  # No KUBE_CONFIG secret or Cloudflare tunnel needed.
   deploy:
     needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -75,10 +76,10 @@ jobs:
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2
 
-      - name: Configure kubeconfig
+      - name: Configure kubeconfig from k3s
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Patch prod overlay images
@@ -91,6 +92,10 @@ jobs:
 
       - name: Deploy to cluster
         run: kubectl apply -k k8s/overlays/prod
+
+      - name: Restart deployments to pull latest images
+        run: |
+          kubectl rollout restart deployment/core-banking deployment/bank-user -n my-bank
 
       - name: Wait for rollouts
         run: |

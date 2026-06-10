@@ -631,10 +631,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"jane.support\",\n  \"email\": \"jane.support@bank.example\",\n  \"full_name\": \"Jane Support\",\n  \"role\": \"bank_support\",\n  \"department\": \"Operations\",\n  \"temporary_password\": \"TempPass123!\"\n}"
+              "raw": "{\n  \"username\": \"ali.retail\",\n  \"email\": \"ali.retail@bank.example\",\n  \"full_name\": \"Ali Retail\",\n  \"role\": \"retail\",\n  \"department\": \"Operations\",\n  \"temporary_password\": \"TempPass123!\"\n}"
             },
             "url": "{{users_base_url}}/bank-users",
-            "description": "Requires platform_admin or bank_admin role. Creates user in Keycloak + DB."
+            "description": "Requires admin or supervisor role. Creates user in Keycloak + DB. Role must be: admin, supervisor, or retail."
           }
         },
         {
@@ -653,7 +653,7 @@
                 },
                 {
                   "key": "role",
-                  "value": "bank_support",
+                  "value": "retail",
                   "disabled": true
                 }
               ]
@@ -708,7 +708,7 @@
             "method": "DELETE",
             "header": [],
             "url": "{{users_base_url}}/bank-users/{{staff_user_id}}",
-            "description": "Requires platform_admin role only."
+            "description": "Requires admin role only."
           }
         }
       ]
