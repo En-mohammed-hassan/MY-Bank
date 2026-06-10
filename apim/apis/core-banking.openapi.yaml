@@ -1,0 +1,214 @@
+openapi: 3.0.3
+info:
+  title: MY-Bank Core Banking API
+  description: Core banking simulator — accounts, customers, transfers, holds.
+  version: 1.0.0
+servers:
+  - url: https://localhost:8243/core-banking/1.0.0
+    description: Local WSO2 gateway (HTTPS)
+  - url: https://api.dental-care.me/core-banking/1.0.0
+    description: Production gateway
+security:
+  - oauth2: []
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Service health
+      security: []
+      tags: [health]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
+  /core/seed:
+    post:
+      operationId: seedDatabase
+      summary: Reset and seed demo data
+      description: Requires platform_admin or bank_admin role.
+      tags: [seed]
+      responses:
+        "200":
+          description: Seed result
+  /core/customers/{cif}:
+    get:
+      operationId: getCustomer
+      summary: Get customer by CIF
+      tags: [customers]
+      parameters:
+        - name: cif
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer detail
+        "404":
+          description: Not found
+  /core/customers/{cif}/accounts:
+    get:
+      operationId: listCustomerAccounts
+      summary: List accounts for a customer
+      tags: [customers]
+      parameters:
+        - name: cif
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account list
+  /core/accounts/{account_number}:
+    get:
+      operationId: getAccount
+      summary: Get account detail
+      tags: [accounts]
+      parameters:
+        - name: account_number
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account detail
+  /core/accounts/{account_number}/transactions:
+    get:
+      operationId: listAccountTransactions
+      summary: List ledger transactions
+      tags: [accounts]
+      parameters:
+        - name: account_number
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: txn_code
+          in: query
+          schema:
+            type: string
+        - name: value_date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: value_date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Transaction list
+  /core/accounts/{account_number}/holds:
+    get:
+      operationId: listAccountHolds
+      summary: List account holds
+      tags: [accounts]
+      parameters:
+        - name: account_number
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Hold list
+    post:
+      operationId: createAccountHold
+      summary: Place a hold on an account
+      tags: [accounts]
+      parameters:
+        - name: account_number
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, reason]
+              properties:
+                amount:
+                  type: string
+                reason:
+                  type: string
+                reference:
+                  type: string
+                expires_at:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Hold created
+  /core/transfers/internal:
+    post:
+      operationId: internalTransfer
+      summary: Execute or simulate internal transfer
+      tags: [transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_account, to_account, amount, idempotency_key]
+              properties:
+                from_account:
+                  type: string
+                to_account:
+                  type: string
+                amount:
+                  type: string
+                currency:
+                  type: string
+                  default: USD
+                reference:
+                  type: string
+                idempotency_key:
+                  type: string
+                simulate:
+                  type: string
+                  enum: [auto, success, failed, pending, insufficient_funds]
+      responses:
+        "200":
+          description: Transfer result
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: https://auth.dental-care.me/realms/bank/protocol/openid-connect/token
+          scopes: {}
+        clientCredentials:
+          tokenUrl: https://auth.dental-care.me/realms/bank/protocol/openid-connect/token
+          scopes: {}

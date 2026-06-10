@@ -5,29 +5,49 @@ Deploy the banking microservices to Kubernetes with **Kustomize** and **GitHub A
 ## Architecture
 
 ```
-                    ┌─────────────────────────────────────┐
-                    │           Ingress (nginx)            │
-                    │  core.example.com  users.example.com │
-                    └──────────┬──────────────┬───────────┘
-                               │              │
-                    ┌──────────▼──┐    ┌──────▼────────┐
-                    │ core-banking │    │  bank-user    │
-                    │  Deployment  │    │  Deployment   │
-                    │  (2 pods)    │    │  (2 pods)     │
-                    └──────┬───────┘    └───────┬───────┘
-                           │                    │
-                           │    ┌───────────────┘
-                           │    │              HTTPS (Admin API + JWKS)
-                           ▼    ▼                    ▼
-                    ┌─────────────────┐      ┌──────────────┐
-                    │    postgres     │      │   Keycloak   │
-                    │  StatefulSet    │      │  (external)  │
-                    │ core_banking +  │      └──────────────┘
+                         Clients / Postman / Web app
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │  WSO2 APIM (Docker)  │  api.dental-care.me
+                         │  wso2/wso2am:4.5.0   │  (external — apim/wso2/)
+                         └──────────┬───────────┘
+                                    │ OAuth2 JWT validated at gateway
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+         ┌─────────────────────┐         ┌─────────────────────┐
+         │  Ingress (nginx)    │         │      Keycloak       │
+         │ core-api.* users-*  │         │  auth.* (external)  │
+         └──────────┬──────────┘         └─────────────────────┘
+                    │                              ▲
+         ┌──────────▼──┐              ┌───────────┴───────────┐
+         │ core-banking │              │      bank-user         │
+         │  Deployment  │              │     Deployment         │
+         │  (2 pods)    │              │     (2 pods)           │
+         └──────┬───────┘              └───────────┬────────────┘
+                │                                │
+                └────────────┬───────────────────┘
+                             ▼
+                    ┌─────────────────┐
+                    │    postgres     │
+                    │  StatefulSet    │
+                    │ core_banking +  │
                     │   bank_users    │
                     └─────────────────┘
 ```
 
-Each service keeps its **own database** on a shared Postgres instance. Keycloak stays external (your existing server install).
+Each service keeps its **own database** on a shared Postgres instance. **Keycloak** and **WSO2 APIM** run outside the cluster (see `apim/README.md`).
+
+### Traffic routing
+
+| Public entry | Routes to |
+|--------------|-----------|
+| `https://api.dental-care.me` | WSO2 gateway → microservices via Ingress hostnames |
+| `https://core-api.dental-care.me` | Direct to core-banking (debug / WSO2 backend) |
+| `https://users-api.dental-care.me` | Direct to bank-user (debug / WSO2 backend) |
+| `https://auth.dental-care.me` | Keycloak (IdP) |
+
+Point DNS `api.dental-care.me` to the host running `docker compose` in `apim/wso2/`.
 
 ## Prerequisites
 
@@ -46,7 +66,7 @@ Update passwords and Keycloak URLs **before** first deploy:
 | File | What to change |
 |------|----------------|
 | `base/postgres/secret.yaml` | `POSTGRES_PASSWORD` |
-| `base/core-banking/secret.yaml` | `DATABASE_URL` password |
+| `base/core-banking/secret.yaml` | `DATABASE_URL` + `KEYCLOAK_*` (JWT auth on `/core/*`) |
 | `base/bank-user/secret.yaml` | DB password + all `KEYCLOAK_*` values |
 | `base/ingress.yaml` | Hostnames (`core.example.com`, etc.) |
 

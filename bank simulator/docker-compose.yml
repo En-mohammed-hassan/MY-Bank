@@ -19,6 +19,8 @@ services:
       - "8001:8000"
     environment:
       DATABASE_URL: postgresql+psycopg2://core:core@postgres:5432/core_banking
+      AUTH_DISABLED: "true"
+      AUTH_DISABLED: "true"
     depends_on:
       postgres:
         condition: service_healthy

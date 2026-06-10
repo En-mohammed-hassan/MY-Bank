@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "my-bank-collection-001",
     "name": "MY-Bank Platform",
-    "description": "Core Banking Simulator + Bank User Service + Keycloak auth.\n\n## Setup\n1. Import this collection into Postman.\n2. Open collection **Variables** and set `admin_password`.\n3. Run **Keycloak → Get Access Token** first.\n4. Then run Bank User or Core Banking requests.\n\n## Remote URLs (dental-care.me)\n- Auth: https://auth.dental-care.me\n- Core: https://core-api.dental-care.me\n- Users: https://users-api.dental-care.me",
+    "description": "Core Banking Simulator + Bank User Service + Keycloak auth + WSO2 APIM gateway.\n\n## Setup\n1. Import this collection into Postman.\n2. Open collection **Variables** and set `admin_password`.\n3. Run **Keycloak → Get Access Token** or **API Gateway → Login via Gateway**.\n4. Then run Bank User, Core Banking, or API Gateway requests.\n\n## URLs\n- Gateway: https://api.dental-care.me (or https://localhost:8243 local)\n- Auth: https://auth.dental-care.me\n- Core: https://core-api.dental-care.me\n- Users: https://users-api.dental-care.me",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,6 +17,14 @@
     {
       "key": "users_base_url",
       "value": "https://users-api.dental-care.me"
+    },
+    {
+      "key": "api_gateway_base_url",
+      "value": "https://localhost:8243"
+    },
+    {
+      "key": "api_gateway_local_url",
+      "value": "https://localhost:8243"
     },
     {
       "key": "keycloak_realm",
@@ -240,7 +248,12 @@
           "name": "Seed Demo Data",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": "{{core_base_url}}/core/seed",
             "description": "Reset and load demo CIF10001 / CIF10002 data. Run once before other core tests."
           }
@@ -249,7 +262,12 @@
           "name": "Get Customer by CIF",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": "{{core_base_url}}/core/customers/{{cif}}"
           }
         },
@@ -257,7 +275,12 @@
           "name": "List Customer Accounts",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": "{{core_base_url}}/core/customers/{{cif}}/accounts"
           }
         },
@@ -265,7 +288,12 @@
           "name": "Get Account",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": "{{core_base_url}}/core/accounts/{{account_number}}"
           }
         },
@@ -273,7 +301,12 @@
           "name": "List Account Transactions",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": {
               "raw": "{{core_base_url}}/core/accounts/{{account_number}}/transactions?limit=20",
               "host": ["{{core_base_url}}"],
@@ -291,7 +324,12 @@
           "name": "List Account Holds",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": "{{core_base_url}}/core/accounts/{{account_number}}/holds"
           }
         },
@@ -300,6 +338,10 @@
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -317,6 +359,10 @@
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -414,6 +460,123 @@
               "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
             },
             "url": "{{users_base_url}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Gateway (WSO2)",
+      "description": "Requests via WSO2 APIM. Run Keycloak login first for authenticated calls.\nLocal: api_gateway_base_url=https://localhost:8243\nRemote: https://api.dental-care.me",
+      "item": [
+        {
+          "name": "Core Health (gateway)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{api_gateway_base_url}}/core-banking/1.0.0/health"
+          }
+        },
+        {
+          "name": "Bank User Health (gateway)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{api_gateway_base_url}}/bank-user/1.0.0/health"
+          }
+        },
+        {
+          "name": "Login via Gateway",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', data.access_token);",
+                  "    if (data.refresh_token) pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": "{{api_gateway_base_url}}/bank-user/1.0.0/auth/login"
+          }
+        },
+        {
+          "name": "Get Customer via Gateway",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{api_gateway_base_url}}/core-banking/1.0.0/core/customers/{{cif}}"
+          }
+        },
+        {
+          "name": "List Staff via Gateway",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{api_gateway_base_url}}/bank-user/1.0.0/bank-users?status=active"
+          }
+        },
+        {
+          "name": "Internal Transfer via Gateway",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_account\": \"{{from_account}}\",\n  \"to_account\": \"{{to_account}}\",\n  \"amount\": \"500.00\",\n  \"idempotency_key\": \"gw-transfer-{{$timestamp}}\",\n  \"simulate\": \"success\"\n}"
+            },
+            "url": "{{api_gateway_base_url}}/core-banking/1.0.0/core/transfers/internal"
           }
         }
       ]

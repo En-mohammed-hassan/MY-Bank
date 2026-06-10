@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.core.auth import require_authenticated
 from app.models.account import Account
 from app.models.hold import AccountHold
 from app.models.transaction import Transaction
@@ -14,7 +15,7 @@ from app.schemas.transaction import TransactionListResponse, TransactionResponse
 from app.services.balance_service import account_to_response
 from app.services.transfer_service import TransferError, place_hold
 
-router = APIRouter(prefix="/core", tags=["accounts"])
+router = APIRouter(prefix="/core", tags=["accounts"], dependencies=[Depends(require_authenticated)])
 
 
 @router.get("/accounts/{account_number}", response_model=AccountResponse)

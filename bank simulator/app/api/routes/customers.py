@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.core.auth import require_authenticated
 from app.models.account import Account
 from app.models.customer import Customer
 from app.schemas.account import AccountListResponse, AccountResponse
 from app.schemas.customer import CustomerResponse
 from app.services.balance_service import account_to_response
 
-router = APIRouter(prefix="/core", tags=["customers"])
+router = APIRouter(prefix="/core", tags=["customers"], dependencies=[Depends(require_authenticated)])
 
 
 @router.get("/customers/{cif}", response_model=CustomerResponse)

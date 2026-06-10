@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
 from app.api.routes import accounts, customers, health, seed, transfers
+from app.core.auth import get_current_user
 from app.db.base import Base
 from app.db.session import engine
 
@@ -23,8 +24,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_core_auth = [Depends(get_current_user)]
+
 app.include_router(health.router)
-app.include_router(seed.router)
-app.include_router(customers.router)
-app.include_router(accounts.router)
-app.include_router(transfers.router)
+app.include_router(seed.router, dependencies=_core_auth)
+app.include_router(customers.router, dependencies=_core_auth)
+app.include_router(accounts.router, dependencies=_core_auth)
+app.include_router(transfers.router, dependencies=_core_auth)

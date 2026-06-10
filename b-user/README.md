@@ -226,15 +226,21 @@ curl -X DELETE "http://localhost:8002/bank-users/<user_id>" \
 
 Deletes the app DB row first, then removes the Keycloak user. If Keycloak deletion fails, the DB record is restored.
 
-## API Manager routing (later)
+## API Manager routing (WSO2 APIM)
 
-When the API gateway is added:
+WSO2 runs outside k3s (`apim/wso2/`). Public entry: `https://api.dental-care.me` (local: `https://localhost:8243`).
 
-```
-/api/bank-users  →  bank-user-service:8000/bank-users
-```
+| Gateway path | Backend |
+|--------------|---------|
+| `GET /bank-user/1.0.0/health` | `https://users-api.dental-care.me/health` |
+| `POST /bank-user/1.0.0/auth/login` | `https://users-api.dental-care.me/auth/login` |
+| `POST /bank-user/1.0.0/auth/refresh` | `https://users-api.dental-care.me/auth/refresh` |
+| `POST /bank-user/1.0.0/auth/logout` | `https://users-api.dental-care.me/auth/logout` |
+| `GET/POST /bank-user/1.0.0/bank-users` | `https://users-api.dental-care.me/bank-users` |
+| `GET/PATCH/DELETE /bank-user/1.0.0/bank-users/{id}` | `https://users-api.dental-care.me/bank-users/{id}` |
+| `GET/POST /core-banking/1.0.0/core/*` | `https://core-api.dental-care.me/core/*` |
 
-The frontend and admin tools call the gateway; the gateway forwards the Bearer token unchanged.
+Import OpenAPI specs from `apim/apis/` into WSO2 Publisher (`apim/README.md`). The gateway forwards the `Authorization: Bearer` header unchanged; this service still validates JWT and roles in-app.
 
 ## Project structure
 

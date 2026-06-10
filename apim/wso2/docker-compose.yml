@@ -1,0 +1,20 @@
+services:
+  wso2am:
+    image: wso2/wso2am:4.5.0
+    container_name: my-bank-wso2am
+    ports:
+      - "9443:9443"   # Publisher / DevPortal / Carbon management (HTTPS)
+      - "8243:8243"   # Gateway HTTPS
+      - "8280:8280"   # Gateway HTTP
+    volumes:
+      - ./conf/deployment.toml:/home/wso2carbon/wso2am-4.5.0/repository/conf/deployment.toml:ro
+    environment:
+      # Documented in .env.example — edit deployment.toml hostnames to match.
+      WSO2_HOSTNAME: ${WSO2_HOSTNAME:-localhost}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-k", "--fail", "https://localhost:9443/carbon/"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s

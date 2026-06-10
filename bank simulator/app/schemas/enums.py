@@ -77,3 +77,11 @@ class TransferSimulateMode(StrEnum):
     INSUFFICIENT_FUNDS = "insufficient_funds"
     PENDING = "pending"
     FAILED = "failed"
+
+
+class BankStaffRole(StrEnum):
+    PLATFORM_ADMIN = "platform_admin"
+    BANK_ADMIN = "bank_admin"
+    BANK_SUPPORT = "bank_support"
+    BANK_AUDITOR = "bank_auditor"
+    RELATIONSHIP_MANAGER = "relationship_manager"

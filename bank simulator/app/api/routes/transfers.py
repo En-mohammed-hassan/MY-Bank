@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.core.auth import require_authenticated
 from app.schemas.transfer import TransferRequest, TransferResponse
 from app.services.transfer_service import TransferError, execute_internal_transfer
 
-router = APIRouter(prefix="/core", tags=["transfers"])
+router = APIRouter(prefix="/core", tags=["transfers"], dependencies=[Depends(require_authenticated)])
 
 
 @router.post("/transfers/internal", response_model=TransferResponse)

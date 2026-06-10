@@ -7,6 +7,8 @@ metadata:
   annotations:
     # Uncomment for cert-manager TLS
     # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Public clients should use WSO2 APIM at api.dental-care.me (see apim/README.md).
+    # These hostnames are backend targets for the gateway and optional direct debugging.
 spec:
   ingressClassName: nginx
   rules:

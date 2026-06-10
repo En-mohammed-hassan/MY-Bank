@@ -37,12 +37,11 @@ spec:
           ports:
             - name: http
               containerPort: 8000
-          env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: core-banking-db
-                  key: DATABASE_URL
+          envFrom:
+            - secretRef:
+                name: core-banking-db
+            - secretRef:
+                name: core-banking-keycloak
           readinessProbe:
             httpGet:
               path: /health
