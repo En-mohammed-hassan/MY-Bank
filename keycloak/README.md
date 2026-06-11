@@ -1,5 +1,7 @@
 # Keycloak (MY-Bank platform IdP)
 
+> **Redeploy checklist (Keycloak + WSO2 + tunnel):** [`platform/docker-platform-deploy.md`](../platform/docker-platform-deploy.md)
+
 Keycloak runs **outside Kubernetes**, like WSO2 APIM (`apim/wso2/`).  
 MY-Bank microservices in k8s connect to it via `KEYCLOAK_*` secrets.
 

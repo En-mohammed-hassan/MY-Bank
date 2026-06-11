@@ -19,9 +19,9 @@ resources:
   - bank-user/secret.yaml
   - bank-user/deployment.yaml
   - bank-user/service.yaml
-  - customer-service/secret.yaml
-  - customer-service/deployment.yaml
-  - customer-service/service.yaml
+  - c-user/secret.yaml
+  - c-user/deployment.yaml
+  - c-user/service.yaml
   - bank-dashboard/configmap.yaml
   - bank-dashboard/deployment.yaml
   - bank-dashboard/service.yaml
@@ -34,8 +34,8 @@ images:
   - name: ghcr.io/example/my-bank/bank-user
     newName: ghcr.io/example/my-bank/bank-user
     newTag: latest
-  - name: ghcr.io/example/my-bank/customer-service
-    newName: ghcr.io/example/my-bank/customer-service
+  - name: ghcr.io/example/my-bank/c-user
+    newName: ghcr.io/example/my-bank/c-user
     newTag: latest
   - name: ghcr.io/example/my-bank/bank-dashboard
     newName: ghcr.io/example/my-bank/bank-dashboard

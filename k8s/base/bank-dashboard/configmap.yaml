@@ -10,3 +10,4 @@ metadata:
 data:
   NEXT_PUBLIC_USERS_API_URL: https://users-api.dental-care.me
   NEXT_PUBLIC_CORE_API_URL: https://core-api.dental-care.me
+  NEXT_PUBLIC_CUSTOMER_API_URL: https://customer-api.dental-care.me

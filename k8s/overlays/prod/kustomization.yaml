@@ -12,8 +12,8 @@ images:
   - name: ghcr.io/example/my-bank/bank-user
     newName: ghcr.io/en-mohammed-hassan/my-bank/bank-user
     newTag: latest
-  - name: ghcr.io/example/my-bank/customer-service
-    newName: ghcr.io/en-mohammed-hassan/my-bank/customer-service
+  - name: ghcr.io/example/my-bank/c-user
+    newName: ghcr.io/en-mohammed-hassan/my-bank/c-user
     newTag: latest
   - name: ghcr.io/example/my-bank/bank-dashboard
     newName: ghcr.io/en-mohammed-hassan/my-bank/bank-dashboard

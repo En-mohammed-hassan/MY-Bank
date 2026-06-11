@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth, bank_users, health
+from app.core.cors import setup_cors
 from app.db.base import Base
 from app.db.session import engine
 
@@ -23,13 +23,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+setup_cors(app)
 
 app.include_router(health.router)
 app.include_router(auth.router)

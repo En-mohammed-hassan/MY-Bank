@@ -68,19 +68,19 @@ jobs:
           tags: ${{ steps.meta-user.outputs.tags }}
           labels: ${{ steps.meta-user.outputs.labels }}
 
-      - name: Docker metadata (customer-service)
+      - name: Docker metadata (c-user)
         id: meta-customer
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.registry.outputs.image_prefix }}/customer-service
+          images: ${{ steps.registry.outputs.image_prefix }}/c-user
           tags: |
             type=raw,value=latest
             type=sha,prefix=
 
-      - name: Build and push customer-service
+      - name: Build and push c-user
         uses: docker/build-push-action@v6
         with:
-          context: ./customer-service
+          context: ./c-user
           push: true
           provenance: false
           sbom: false
@@ -106,6 +106,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_USERS_API_URL=https://users-api.dental-care.me
             NEXT_PUBLIC_CORE_API_URL=https://core-api.dental-care.me
+            NEXT_PUBLIC_CUSTOMER_API_URL=https://customer-api.dental-care.me
           tags: ${{ steps.meta-dashboard.outputs.tags }}
           labels: ${{ steps.meta-dashboard.outputs.labels }}
 
@@ -150,7 +151,7 @@ jobs:
           kustomize edit set image \
             ghcr.io/example/my-bank/core-banking=${IMAGE_PREFIX}/core-banking:latest \
             ghcr.io/example/my-bank/bank-user=${IMAGE_PREFIX}/bank-user:latest \
-            ghcr.io/example/my-bank/customer-service=${IMAGE_PREFIX}/customer-service:latest \
+            ghcr.io/example/my-bank/c-user=${IMAGE_PREFIX}/c-user:latest \
             ghcr.io/example/my-bank/bank-dashboard=${IMAGE_PREFIX}/bank-dashboard:latest
 
       - name: Deploy Kubernetes Dashboard
@@ -161,7 +162,7 @@ jobs:
 
       - name: Restart deployments to pull latest images
         run: |
-          kubectl rollout restart deployment/core-banking deployment/bank-user deployment/customer-service deployment/bank-dashboard -n my-bank
+          kubectl rollout restart deployment/core-banking deployment/bank-user deployment/c-user deployment/bank-dashboard -n my-bank
 
       - name: Wait for rollouts
         env:
@@ -170,7 +171,7 @@ jobs:
           # Slow networks: image pulls (~70MB each) can take several minutes per pod.
           kubectl rollout status deployment/core-banking -n my-bank --timeout="$ROLLOUT_TIMEOUT"
           kubectl rollout status deployment/bank-user -n my-bank --timeout="$ROLLOUT_TIMEOUT"
-          kubectl rollout status deployment/customer-service -n my-bank --timeout="$ROLLOUT_TIMEOUT"
+          kubectl rollout status deployment/c-user -n my-bank --timeout="$ROLLOUT_TIMEOUT"
           kubectl rollout status deployment/bank-dashboard -n my-bank --timeout="$ROLLOUT_TIMEOUT"
 
       - name: Debug failed rollout

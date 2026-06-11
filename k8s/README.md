@@ -46,6 +46,7 @@ Each service keeps its **own database** on a shared Postgres instance. **Keycloa
 | `https://api.dental-care.me` | WSO2 gateway → microservices via Ingress hostnames |
 | `https://core-api.dental-care.me` | Direct to core-banking (debug / WSO2 backend) |
 | `https://users-api.dental-care.me` | Direct to bank-user (debug / WSO2 backend) |
+| `https://customer-api.dental-care.me` | Direct to c-user (retail customer API) |
 | `https://auth.dental-care.me` | Keycloak (IdP, Docker host) |
 | `https://dashboard.dental-care.me` | Staff web UI (`bank-dashboard`) |
 | `https://kube.dental-care.me` | Kubernetes cluster admin UI |
@@ -80,11 +81,12 @@ Update passwords and Keycloak URLs **before** first deploy:
 | `base/postgres/secret.yaml` | `POSTGRES_PASSWORD` |
 | `base/core-banking/secret.yaml` | `DATABASE_URL` + `KEYCLOAK_*` (JWT auth on `/core/*`) |
 | `base/bank-user/secret.yaml` | DB password + all `KEYCLOAK_*` values |
+| `base/c-user/secret.yaml` | DB password + all `KEYCLOAK_*` values |
 | `base/ingress.yaml` | Hostnames (`core.example.com`, etc.) |
 
 Use the same Postgres password in all three DB secrets.
 
-Postgres init scripts run only when the data PVC is first initialized. On existing clusters that were created before `bank_customers` was added, create the database once before or during the customer-service rollout:
+Postgres init scripts run only when the data PVC is first initialized. On existing clusters that were created before `bank_customers` was added, create the database once before or during the **c-user** rollout:
 
 ```bash
 kubectl exec -n my-bank postgres-0 -- sh -c 'export PGPASSWORD="$POSTGRES_PASSWORD"; psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''bank_customers'\''" | grep -q 1 || psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE bank_customers"'

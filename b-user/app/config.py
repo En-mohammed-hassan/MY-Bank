@@ -22,6 +22,16 @@ class Settings(BaseSettings):
     # Optional. bank-web tokens use aud=account by default.
     keycloak_audience: str | None = None
 
+    # CORS — comma-separated origins, or * for all (dev). Example: https://dashboard.dental-care.me
+    cors_origins: str = "*"
+    cors_allow_credentials: bool = False
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        if self.cors_origins.strip() == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
     @property
     def keycloak_issuer(self) -> str:
         return f"{self.keycloak_server_url.rstrip('/')}/realms/{self.keycloak_realm}"

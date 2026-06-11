@@ -45,7 +45,7 @@ export default function CustomersPage() {
           temporary_password: form.get("temporary_password"),
         }),
       });
-      setMsg("Customer created in Keycloak + customer-service.");
+      setMsg("Customer created in Keycloak + c-user.");
       e.currentTarget.reset();
       await loadCustomers();
     } catch (err) {

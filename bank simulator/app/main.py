@@ -1,10 +1,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import accounts, customers, health, seed, transfers
 from app.core.auth import get_current_user
+from app.core.cors import setup_cors
 from app.db.base import Base
 from app.db.session import engine
 
@@ -25,13 +25,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+setup_cors(app)
 
 _core_auth = [Depends(get_current_user)]
 

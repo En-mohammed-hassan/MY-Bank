@@ -9,6 +9,12 @@ metadata:
     # cert-manager.io/cluster-issuer: letsencrypt-prod
     # Public clients should use WSO2 APIM at api.dental-care.me (see apim/README.md).
     # These hostnames are backend targets for the gateway and optional direct debugging.
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "false"
+    nginx.ingress.kubernetes.io/cors-max-age: "86400"
 spec:
   ingressClassName: nginx
   rules:
@@ -39,7 +45,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: customer-service
+                name: c-user
                 port:
                   name: http
     - host: dashboard.dental-care.me

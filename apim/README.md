@@ -1,5 +1,7 @@
 # WSO2 API Manager (MY-Bank)
 
+> **Redeploy checklist (Keycloak + WSO2 + tunnel):** [`platform/docker-platform-deploy.md`](../platform/docker-platform-deploy.md)
+
 WSO2 APIM runs **outside** the k3s cluster (same pattern as Keycloak). It is the public entry point at `api.dental-care.me`; backend services stay on `core-api.dental-care.me` and `users-api.dental-care.me`.
 
 ## Architecture

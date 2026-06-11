@@ -9,6 +9,7 @@ Next.js staff dashboard for the Agentic Banking OS. Logs in via **users-api** (`
 | `/login` | everyone | Sign in |
 | `/dashboard` | all staff | Overview + seed demo (admin) |
 | `/staff` | all staff | List staff; create (admin, supervisor) |
+| `/customers` | admin, supervisor | Create/list retail customers (c-user API) |
 | `/accounts` | all staff | View CIF/accounts; transfer (admin, supervisor) |
 
 ## Local setup
@@ -27,6 +28,7 @@ Open **http://localhost:3000**
 ```env
 NEXT_PUBLIC_USERS_API_URL=https://users-api.dental-care.me
 NEXT_PUBLIC_CORE_API_URL=https://core-api.dental-care.me
+NEXT_PUBLIC_CUSTOMER_API_URL=https://customer-api.dental-care.me
 ```
 
 ### CORS

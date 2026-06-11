@@ -37,7 +37,7 @@ Create **one published application per row**:
 | `apim.dental-care.me` | `https://127.0.0.1:9443` | WSO2 Publisher/DevPortal — **protect with Cloudflare Access** |
 | `core-api.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → core-banking |
 | `users-api.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → bank-user |
-| `customer-api.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → customer-service |
+| `customer-api.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → c-user |
 | `dashboard.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → bank-dashboard (staff UI) |
 | `kube.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → Kubernetes Dashboard |
 
