@@ -86,7 +86,19 @@ jobs:
       - name: Configure kubeconfig from k3s
         run: |
           mkdir -p ~/.kube
-          sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/config
+          if [ -f ~/.kube/config ]; then
+            echo "Using existing ~/.kube/config"
+          elif [ -r /etc/rancher/k3s/k3s.yaml ]; then
+            cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+          else
+            echo "::error::~/.kube/config missing and cannot read /etc/rancher/k3s/k3s.yaml."
+            echo "On the runner host, run once (replace USER with the runner service user):"
+            echo "  sudo mkdir -p /home/USER/.kube"
+            echo "  sudo cp /etc/rancher/k3s/k3s.yaml /home/USER/.kube/config"
+            echo "  sudo chown USER:USER /home/USER/.kube/config"
+            echo "  sudo chmod 600 /home/USER/.kube/config"
+            exit 1
+          fi
           chmod 600 ~/.kube/config
 
       - name: Patch prod overlay images

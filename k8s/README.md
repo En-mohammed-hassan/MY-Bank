@@ -142,21 +142,25 @@ sudo ./svc.sh start
 
 4. Back in GitHub → **Runners**, confirm the runner shows **Idle** (green).
 
-**Runner user must read k3s kubeconfig.** The workflow runs:
+**One-time: give the runner user a kubeconfig** (the workflow cannot use `sudo` — no password in CI).
+
+Find which user runs the runner (the user you passed to `./svc.sh install`, often your SSH user):
 
 ```bash
-sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/config
+# Replace mhd with your runner user
+sudo mkdir -p /home/mhd/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml /home/mhd/.kube/config
+sudo chown mhd:mhd /home/mhd/.kube/config
+sudo chmod 600 /home/mhd/.kube/config
 ```
 
-If deploy fails with permission denied, allow passwordless read for the runner user:
+Verify as that user:
 
 ```bash
-sudo visudo
-# Add (replace runner-user with the user that runs the service):
-runner-user ALL=(ALL) NOPASSWD: /usr/bin/cat /etc/rancher/k3s/k3s.yaml
+kubectl get nodes
 ```
 
-Or run the runner service as root (simpler, less ideal for production).
+Re-run the GitHub Actions workflow after this.
 
 ### Secrets
 

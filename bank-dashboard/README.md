@@ -29,20 +29,9 @@ NEXT_PUBLIC_USERS_API_URL=https://users-api.dental-care.me
 NEXT_PUBLIC_CORE_API_URL=https://core-api.dental-care.me
 ```
 
-### CORS (required for browser calls)
+### CORS
 
-Both APIs must allow `http://localhost:3000`:
-
-```env
-# bank-user + core-banking
-CORS_ORIGINS=http://localhost:3000
-```
-
-After deploying API images with CORS support, restart pods. For production dashboard host add:
-
-```env
-CORS_ORIGINS=http://localhost:3000,https://dashboard.dental-care.me
-```
+Both APIs allow all origins (`*`) via FastAPI `CORSMiddleware` — no extra env vars needed.
 
 ## Auth flow
 
@@ -63,4 +52,3 @@ Browser → POST users-api/auth/login { username, password }
 - Build: `npm run build && npm start`
 - Or host on Vercel / Cloudflare Pages
 - Add Cloudflare tunnel route: `dashboard.dental-care.me` → `:3000`
-- Set `CORS_ORIGINS` on APIs to include production dashboard URL

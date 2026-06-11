@@ -4,7 +4,6 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import accounts, customers, health, seed, transfers
-from app.config import settings
 from app.core.auth import get_current_user
 from app.db.base import Base
 from app.db.session import engine
@@ -28,8 +27,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
