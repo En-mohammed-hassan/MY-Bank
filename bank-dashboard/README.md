@@ -47,8 +47,29 @@ Browser → POST users-api/auth/login { username, password }
 - Staff log in with **bank-web** client (via users-api proxy).
 - User must have realm role: `admin`, `supervisor`, or `retail`.
 
-## Production deploy (later)
+## Production deploy (Kubernetes)
 
-- Build: `npm run build && npm start`
-- Or host on Vercel / Cloudflare Pages
-- Add Cloudflare tunnel route: `dashboard.dental-care.me` → `:3000`
+Same flow as `b-user` and `core-banking`:
+
+1. **Dockerfile** in this folder — Next.js **standalone** image (~150MB runtime, Alpine)
+2. **GitHub Actions** builds → `ghcr.io/.../bank-dashboard:latest`
+3. **k8s** deploys `bank-dashboard` in `my-bank` namespace
+4. **Ingress:** `https://dashboard.dental-care.me`
+
+Local image build:
+
+```bash
+docker build -t bank-dashboard \
+  --build-arg NEXT_PUBLIC_USERS_API_URL=https://users-api.dental-care.me \
+  --build-arg NEXT_PUBLIC_CORE_API_URL=https://core-api.dental-care.me \
+  .
+```
+
+API URLs are **baked in at build time** (`NEXT_PUBLIC_*`). Change them in the workflow build-args or Dockerfile `ARG` defaults, then rebuild.
+
+## Not the same as Kubernetes Dashboard
+
+| Name | What | Dockerfile in repo? |
+|------|------|---------------------|
+| **bank-dashboard/** | Staff web UI (this app) | **Yes** — built in CI |
+| **k8s/addons/dashboard/** | k8s cluster admin UI | **No** — official upstream image |

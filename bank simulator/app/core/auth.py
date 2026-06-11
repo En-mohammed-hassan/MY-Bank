@@ -57,9 +57,7 @@ def _token_audiences(claims: dict[str, Any]) -> frozenset[str]:
 
 def _validate_token_audience(claims: dict[str, Any]) -> None:
     audiences = _token_audiences(claims)
-    allowed = {settings.keycloak_public_client_id, "account"}
-    if settings.keycloak_audience:
-        allowed.add(settings.keycloak_audience)
+    allowed = settings.keycloak_accepted_audiences
 
     if audiences and not audiences.intersection(allowed):
         raise HTTPException(

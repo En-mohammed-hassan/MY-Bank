@@ -7,6 +7,7 @@ import { hasRole, type SessionUser } from "@/lib/auth";
 const links = [
   { href: "/dashboard", label: "Overview", roles: ["admin", "supervisor", "retail"] as const },
   { href: "/staff", label: "Staff", roles: ["admin", "supervisor", "retail"] as const },
+  { href: "/customers", label: "Customers", roles: ["admin", "supervisor"] as const },
   { href: "/accounts", label: "Accounts", roles: ["admin", "supervisor", "retail"] as const },
 ];
 

@@ -87,6 +87,28 @@ jobs:
           tags: ${{ steps.meta-customer.outputs.tags }}
           labels: ${{ steps.meta-customer.outputs.labels }}
 
+      - name: Docker metadata (bank-dashboard)
+        id: meta-dashboard
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.registry.outputs.image_prefix }}/bank-dashboard
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and push bank-dashboard
+        uses: docker/build-push-action@v6
+        with:
+          context: ./bank-dashboard
+          push: true
+          provenance: false
+          sbom: false
+          build-args: |
+            NEXT_PUBLIC_USERS_API_URL=https://users-api.dental-care.me
+            NEXT_PUBLIC_CORE_API_URL=https://core-api.dental-care.me
+          tags: ${{ steps.meta-dashboard.outputs.tags }}
+          labels: ${{ steps.meta-dashboard.outputs.labels }}
+
   # Runs on a self-hosted runner installed on the same server as k3s.
   # No KUBE_CONFIG secret or Cloudflare tunnel needed.
   deploy:
@@ -128,14 +150,18 @@ jobs:
           kustomize edit set image \
             ghcr.io/example/my-bank/core-banking=${IMAGE_PREFIX}/core-banking:latest \
             ghcr.io/example/my-bank/bank-user=${IMAGE_PREFIX}/bank-user:latest \
-            ghcr.io/example/my-bank/customer-service=${IMAGE_PREFIX}/customer-service:latest
+            ghcr.io/example/my-bank/customer-service=${IMAGE_PREFIX}/customer-service:latest \
+            ghcr.io/example/my-bank/bank-dashboard=${IMAGE_PREFIX}/bank-dashboard:latest
+
+      - name: Deploy Kubernetes Dashboard
+        run: kubectl apply -k k8s/addons/dashboard
 
       - name: Deploy to cluster
         run: kubectl apply -k k8s/overlays/prod
 
       - name: Restart deployments to pull latest images
         run: |
-          kubectl rollout restart deployment/core-banking deployment/bank-user deployment/customer-service -n my-bank
+          kubectl rollout restart deployment/core-banking deployment/bank-user deployment/customer-service deployment/bank-dashboard -n my-bank
 
       - name: Wait for rollouts
         env:
@@ -145,6 +171,7 @@ jobs:
           kubectl rollout status deployment/core-banking -n my-bank --timeout="$ROLLOUT_TIMEOUT"
           kubectl rollout status deployment/bank-user -n my-bank --timeout="$ROLLOUT_TIMEOUT"
           kubectl rollout status deployment/customer-service -n my-bank --timeout="$ROLLOUT_TIMEOUT"
+          kubectl rollout status deployment/bank-dashboard -n my-bank --timeout="$ROLLOUT_TIMEOUT"
 
       - name: Debug failed rollout
         if: failure()

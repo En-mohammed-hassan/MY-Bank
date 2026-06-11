@@ -30,6 +30,29 @@ spec:
                 echo "waiting for postgres..."
                 sleep 2
               done
+        - name: ensure-bank-customers-db
+          image: postgres:16
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+          command:
+            - sh
+            - -c
+            - |
+              export PGPASSWORD="$POSTGRES_PASSWORD"
+
+              if psql -h postgres -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'bank_customers'" | grep -q 1; then
+                echo "database bank_customers already exists"
+              else
+                echo "creating database bank_customers"
+                if psql -h postgres -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE bank_customers"; then
+                  echo "database bank_customers created"
+                elif psql -h postgres -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'bank_customers'" | grep -q 1; then
+                  echo "database bank_customers was created concurrently"
+                else
+                  exit 1
+                fi
+              fi
       containers:
         - name: customer-service
           image: ghcr.io/example/my-bank/customer-service:latest

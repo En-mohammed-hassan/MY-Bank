@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Official Kubernetes Dashboard (cluster-wide UI — separate from my-bank namespace)
+resources:
+  - https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+  - admin-user.yaml
+  - ingress.yaml

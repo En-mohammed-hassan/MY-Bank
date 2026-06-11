@@ -46,3 +46,4 @@ export async function apiFetch<T>(
 
 export const usersApi = process.env.NEXT_PUBLIC_USERS_API_URL ?? "";
 export const coreApi = process.env.NEXT_PUBLIC_CORE_API_URL ?? "";
+export const customerApi = process.env.NEXT_PUBLIC_CUSTOMER_API_URL ?? "";

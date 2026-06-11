@@ -53,6 +53,22 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8003
 ```
 
+## Kubernetes database bootstrap
+
+`customer-service` uses the `bank_customers` PostgreSQL database. The Kubernetes deployment creates it idempotently in an init container before the app starts, using the shared `postgres-credentials` secret.
+
+For clusters where Postgres was already initialized before `bank_customers` existed, the Postgres init ConfigMap will not run again on the existing PVC. Fix the running cluster immediately with:
+
+```bash
+kubectl exec -n my-bank postgres-0 -- sh -c 'export PGPASSWORD="$POSTGRES_PASSWORD"; psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''bank_customers'\''" | grep -q 1 || psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE bank_customers"'
+```
+
+You can also run the optional one-shot Job from the repo:
+
+```bash
+kubectl apply -n my-bank -f k8s/base/postgres/ensure-databases-job.yaml
+```
+
 ## Create customer (staff token)
 
 ```bash

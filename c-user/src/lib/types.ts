@@ -10,3 +10,27 @@ export type CustomerProfile = {
   created_at: string;
   updated_at: string;
 };
+
+export type CoreCustomer = {
+  cif: string;
+  full_name: string;
+  customer_type: string;
+  status: string;
+};
+
+export type Account = {
+  account_number: string;
+  cif: string;
+  product_category: string;
+  currency: string;
+  ledger_balance: string;
+  available_balance: string;
+  hold_amount: string;
+  status: string;
+};
+
+export type AccountListResponse = {
+  cif: string;
+  accounts: Account[];
+  total: number;
+};

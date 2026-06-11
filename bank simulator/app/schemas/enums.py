@@ -83,3 +83,8 @@ class BankStaffRole(StrEnum):
     ADMIN = "admin"
     SUPERVISOR = "supervisor"
     RETAIL = "retail"
+
+
+class CustomerPortalRole(StrEnum):
+    EDITOR = "editor"
+    VIEWER = "viewer"

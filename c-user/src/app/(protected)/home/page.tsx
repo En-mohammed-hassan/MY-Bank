@@ -1,23 +1,33 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, coreFetch } from "@/lib/api";
 import { getSessionUser, hasRole } from "@/lib/auth";
-import type { CustomerProfile } from "@/lib/types";
+import type { Account, AccountListResponse, CoreCustomer, CustomerProfile } from "@/lib/types";
 
 export default function HomePage() {
   const user = getSessionUser();
   const canEdit = hasRole(user, "editor");
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
+  const [coreCustomer, setCoreCustomer] = useState<CoreCustomer | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<CustomerProfile>("/customers/me")
-      .then((p) => {
+      .then(async (p) => {
         setProfile(p);
         setFullName(p.full_name);
+        if (p.cif) {
+          const [customer, accountList] = await Promise.all([
+            coreFetch<CoreCustomer>(`/core/customers/${p.cif}`),
+            coreFetch<AccountListResponse>(`/core/customers/${p.cif}/accounts`),
+          ]);
+          setCoreCustomer(customer);
+          setAccounts(accountList.accounts);
+        }
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load profile"));
   }, []);
@@ -81,6 +91,41 @@ export default function HomePage() {
           )}
         </div>
       )}
+
+      {profile?.cif && coreCustomer && (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="font-semibold text-bank-navy">Banking profile</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            {coreCustomer.full_name} · {coreCustomer.customer_type} · {coreCustomer.status}
+          </p>
+        </div>
+      )}
+
+      {profile?.cif && accounts.length > 0 && (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="font-semibold text-bank-navy">My accounts</h2>
+          <ul className="mt-4 space-y-3">
+            {accounts.map((a) => (
+              <li
+                key={a.account_number}
+                className="rounded-lg border border-slate-100 px-4 py-3"
+              >
+                <p className="font-mono text-sm">{a.account_number}</p>
+                <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                  <Mini label="Product" value={a.product_category} />
+                  <Mini label="Status" value={a.status} />
+                  <Mini label="Ledger balance" value={a.ledger_balance} />
+                  <Mini label="Available" value={a.available_balance} />
+                </dl>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {profile?.cif && accounts.length === 0 && coreCustomer && (
+        <p className="mt-4 text-sm text-slate-500">No accounts linked to your CIF yet.</p>
+      )}
     </div>
   );
 }
@@ -90,6 +135,15 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-4">
       <span className="text-slate-500">{label}</span>
       <span className="font-medium text-right">{value}</span>
+    </div>
+  );
+}
+
+function Mini({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="font-medium">{value}</dd>
     </div>
   );
 }

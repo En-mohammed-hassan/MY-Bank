@@ -1,31 +1,41 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiFetch, coreApi } from "@/lib/api";
 import { getSessionUser, hasRole } from "@/lib/auth";
 import type { Account, Customer } from "@/lib/types";
 
 export default function AccountsPage() {
+  const searchParams = useSearchParams();
   const user = getSessionUser();
   const canTransfer = hasRole(user, "admin", "supervisor");
-  const [cif, setCif] = useState("CIF10001");
+  const [cif, setCif] = useState(() => searchParams.get("cif") ?? "CIF10001");
   const [accountNumber, setAccountNumber] = useState("ACC-10001-01");
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [transferMsg, setTransferMsg] = useState<string | null>(null);
 
-  async function loadCustomer(e?: FormEvent) {
-    e?.preventDefault();
+  useEffect(() => {
+    const fromUrl = searchParams.get("cif");
+    if (fromUrl) {
+      setCif(fromUrl);
+      void loadCustomerForCif(fromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  async function loadCustomerForCif(cifValue: string) {
     setError(null);
     setCustomer(null);
     setAccount(null);
     try {
-      const c = await apiFetch<Customer>(coreApi, `/core/customers/${cif}`);
+      const c = await apiFetch<Customer>(coreApi, `/core/customers/${cifValue}`);
       setCustomer(c);
       const list = await apiFetch<{ accounts: Account[] }>(
         coreApi,
-        `/core/customers/${cif}/accounts`,
+        `/core/customers/${cifValue}/accounts`,
       );
       if (list.accounts.length > 0) {
         setAccountNumber(list.accounts[0].account_number);
@@ -34,6 +44,11 @@ export default function AccountsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Load failed");
     }
+  }
+
+  async function loadCustomer(e?: FormEvent) {
+    e?.preventDefault();
+    await loadCustomerForCif(cif);
   }
 
   async function loadAccount(num: string) {
