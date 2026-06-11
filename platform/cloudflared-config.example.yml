@@ -1,0 +1,41 @@
+# Example cloudflared ingress config for MY-Bank.
+# Copy to your server, set tunnel ID + credentials path, then:
+#   cloudflared tunnel --config cloudflared-config.yml run
+#
+# Or configure the same routes in Cloudflare Zero Trust UI (easier).
+
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /home/YOUR_USER/.cloudflared/YOUR_TUNNEL_ID.json
+
+ingress:
+  # --- Platform (Docker on host) ---
+  - hostname: auth.dental-care.me
+    service: http://127.0.0.1:8080
+
+  - hostname: api.dental-care.me
+    service: https://127.0.0.1:8243
+    originRequest:
+      noTLSVerify: true
+
+  - hostname: apim.dental-care.me
+    service: https://127.0.0.1:9443
+    originRequest:
+      noTLSVerify: true
+
+  # --- Kubernetes (nginx Ingress — same port for all hosts) ---
+  - hostname: core-api.dental-care.me
+    service: http://127.0.0.1:80
+
+  - hostname: users-api.dental-care.me
+    service: http://127.0.0.1:80
+
+  - hostname: customer-api.dental-care.me
+    service: http://127.0.0.1:80
+
+  - hostname: dashboard.dental-care.me
+    service: http://127.0.0.1:80
+
+  - hostname: kube.dental-care.me
+    service: http://127.0.0.1:80
+
+  - service: http_status:404
