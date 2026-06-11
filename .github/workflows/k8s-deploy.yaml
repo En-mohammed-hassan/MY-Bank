@@ -68,11 +68,31 @@ jobs:
           tags: ${{ steps.meta-user.outputs.tags }}
           labels: ${{ steps.meta-user.outputs.labels }}
 
+      - name: Docker metadata (customer-service)
+        id: meta-customer
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.registry.outputs.image_prefix }}/customer-service
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and push customer-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./customer-service
+          push: true
+          provenance: false
+          sbom: false
+          tags: ${{ steps.meta-customer.outputs.tags }}
+          labels: ${{ steps.meta-customer.outputs.labels }}
+
   # Runs on a self-hosted runner installed on the same server as k3s.
   # No KUBE_CONFIG secret or Cloudflare tunnel needed.
   deploy:
     needs: build-and-push
     runs-on: self-hosted
+    timeout-minutes: 45
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -107,16 +127,33 @@ jobs:
           cd k8s/overlays/prod
           kustomize edit set image \
             ghcr.io/example/my-bank/core-banking=${IMAGE_PREFIX}/core-banking:latest \
-            ghcr.io/example/my-bank/bank-user=${IMAGE_PREFIX}/bank-user:latest
+            ghcr.io/example/my-bank/bank-user=${IMAGE_PREFIX}/bank-user:latest \
+            ghcr.io/example/my-bank/customer-service=${IMAGE_PREFIX}/customer-service:latest
 
       - name: Deploy to cluster
         run: kubectl apply -k k8s/overlays/prod
 
       - name: Restart deployments to pull latest images
         run: |
-          kubectl rollout restart deployment/core-banking deployment/bank-user -n my-bank
+          kubectl rollout restart deployment/core-banking deployment/bank-user deployment/customer-service -n my-bank
 
       - name: Wait for rollouts
+        env:
+          ROLLOUT_TIMEOUT: 900s
         run: |
-          kubectl rollout status deployment/core-banking -n my-bank --timeout=180s
-          kubectl rollout status deployment/bank-user -n my-bank --timeout=180s
+          # Slow networks: image pulls (~70MB each) can take several minutes per pod.
+          kubectl rollout status deployment/core-banking -n my-bank --timeout="$ROLLOUT_TIMEOUT"
+          kubectl rollout status deployment/bank-user -n my-bank --timeout="$ROLLOUT_TIMEOUT"
+          kubectl rollout status deployment/customer-service -n my-bank --timeout="$ROLLOUT_TIMEOUT"
+
+      - name: Debug failed rollout
+        if: failure()
+        run: |
+          kubectl get pods -n my-bank -o wide
+          kubectl describe deployment core-banking -n my-bank | tail -40
+          kubectl describe deployment bank-user -n my-bank | tail -40
+          for p in $(kubectl get pods -n my-bank -o name); do
+            echo "=== $p ==="
+            kubectl describe -n my-bank "$p" | tail -25
+            kubectl logs -n my-bank "$p" --tail=50 || true
+          done

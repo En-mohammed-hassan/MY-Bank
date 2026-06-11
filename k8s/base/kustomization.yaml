@@ -19,6 +19,9 @@ resources:
   - bank-user/secret.yaml
   - bank-user/deployment.yaml
   - bank-user/service.yaml
+  - customer-service/secret.yaml
+  - customer-service/deployment.yaml
+  - customer-service/service.yaml
   - ingress.yaml
 
 images:
@@ -27,4 +30,7 @@ images:
     newTag: latest
   - name: ghcr.io/example/my-bank/bank-user
     newName: ghcr.io/example/my-bank/bank-user
+    newTag: latest
+  - name: ghcr.io/example/my-bank/customer-service
+    newName: ghcr.io/example/my-bank/customer-service
     newTag: latest

@@ -32,6 +32,16 @@ spec:
                 name: bank-user
                 port:
                   name: http
+    - host: customer-api.dental-care.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: customer-service
+                port:
+                  name: http
   # tls:
   #   - hosts:
   #       - core-api.dental-care.me

@@ -36,7 +36,7 @@ Deploy the banking microservices to Kubernetes with **Kustomize** and **GitHub A
                     └─────────────────┘
 ```
 
-Each service keeps its **own database** on a shared Postgres instance. **Keycloak** and **WSO2 APIM** run outside the cluster (see `apim/README.md`).
+Each service keeps its **own database** on a shared Postgres instance. **Keycloak** (`keycloak/`) and **WSO2 APIM** (`apim/wso2/`) run outside the cluster on Docker.
 
 ### Traffic routing
 

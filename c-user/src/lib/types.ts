@@ -1,0 +1,12 @@
+export type CustomerProfile = {
+  id: string;
+  keycloak_user_id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  cif: string | null;
+  role: "editor" | "viewer";
+  status: "active" | "disabled";
+  created_at: string;
+  updated_at: string;
+};
