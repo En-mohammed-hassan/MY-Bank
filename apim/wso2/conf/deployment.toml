@@ -1,10 +1,11 @@
 # MY-Bank WSO2 API Manager 4.5.0 — production (Cloudflare Tunnel)
 # Uses embedded H2 (default). For hardened prod, switch to shared MySQL/PostgreSQL.
 #
-# Tunnel: api.dental-care.me → :8243 (gateway), apim.dental-care.me → :9443 (publisher)
+# Tunnel: api.dental-care.me → :8280 (gateway), apim.dental-care.me → :8090→9443 (publisher)
+# server.hostname = Publisher/OAuth; gateway endpoints stay on api.dental-care.me below.
 
 [server]
-hostname = "api.dental-care.me"
+hostname = "apim.dental-care.me"
 server_role = "default"
 
 [user_store]

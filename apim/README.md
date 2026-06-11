@@ -46,8 +46,8 @@ Publisher UI: https://localhost:9443/publisher (accept self-signed cert)
 
 Edit `apim/wso2/conf/deployment.toml`:
 
-- `[server].hostname` → `api.dental-care.me`
-- `[[apim.gateway.environment]]` → update `http_endpoint`, `https_endpoint`, `service_url`
+- `[server].hostname` → `apim.dental-care.me` (Publisher / OAuth — not `api.*`)
+- `[[apim.gateway.environment]]` → `http_endpoint` / `https_endpoint` on `api.dental-care.me`
 
 Restart: `docker compose restart`
 
