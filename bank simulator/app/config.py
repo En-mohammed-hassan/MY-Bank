@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     keycloak_jwks_url: str = "http://localhost:8080/realms/bank/protocol/openid-connect/certs"
     keycloak_audience: str | None = None
 
+    cors_origins: str = "http://localhost:3000"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     @property
     def keycloak_issuer(self) -> str:
         return f"{self.keycloak_server_url.rstrip('/')}/realms/{self.keycloak_realm}"

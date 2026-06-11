@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import accounts, customers, health, seed, transfers
+from app.config import settings
 from app.core.auth import get_current_user
 from app.db.base import Base
 from app.db.session import engine
@@ -22,6 +24,14 @@ app = FastAPI(
     description="Canonical core banking simulator for adapter training and integration testing",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 _core_auth = [Depends(get_current_user)]

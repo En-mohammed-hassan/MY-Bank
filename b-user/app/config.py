@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     # Optional. bank-web tokens use aud=account by default.
     keycloak_audience: str | None = None
 
+    # Comma-separated browser origins for the staff dashboard (CORS).
+    cors_origins: str = "http://localhost:3000"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     @property
     def keycloak_issuer(self) -> str:
         return f"{self.keycloak_server_url.rstrip('/')}/realms/{self.keycloak_realm}"
