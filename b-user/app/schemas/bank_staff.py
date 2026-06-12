@@ -1,9 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.schemas.enums import BankStaffRole, StaffStatus
+from app.schemas.enums import BankStaffRole, StaffStatus, normalize_staff_role
 
 
 class BankStaffCreateRequest(BaseModel):
@@ -36,6 +36,13 @@ class BankStaffResponse(BaseModel):
     department: str | None
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def coerce_legacy_role(cls, value: str | BankStaffRole) -> BankStaffRole:
+        if isinstance(value, BankStaffRole):
+            return value
+        return normalize_staff_role(str(value))
 
 
 class BankStaffListResponse(BaseModel):

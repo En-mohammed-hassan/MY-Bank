@@ -9,6 +9,18 @@ export class ApiError extends Error {
   }
 }
 
+async function readErrorMessage(res: Response): Promise<string> {
+  const text = await res.text();
+  if (!text) return `Request failed (${res.status})`;
+  try {
+    const body = JSON.parse(text) as { detail?: unknown };
+    if (typeof body.detail === "string") return body.detail;
+    return JSON.stringify(body);
+  } catch {
+    return text;
+  }
+}
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const base = process.env.NEXT_PUBLIC_CUSTOMER_API_URL ?? "";
   const token = getAccessToken();
@@ -21,14 +33,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const res = await fetch(`${base}${path}`, { ...init, headers });
   if (res.status === 401) throw new ApiError("Session expired — please log in again", 401);
   if (!res.ok) {
-    let message = `Request failed (${res.status})`;
-    try {
-      const body = await res.json();
-      message = body.detail ?? JSON.stringify(body);
-    } catch {
-      message = (await res.text()) || message;
-    }
-    throw new ApiError(message, res.status);
+    throw new ApiError(await readErrorMessage(res), res.status);
   }
   return res.json() as Promise<T>;
 }
@@ -46,14 +51,7 @@ export async function coreFetch<T>(path: string, init: RequestInit = {}): Promis
   const res = await fetch(`${coreApi}${path}`, { ...init, headers });
   if (res.status === 401) throw new ApiError("Session expired — please log in again", 401);
   if (!res.ok) {
-    let message = `Request failed (${res.status})`;
-    try {
-      const body = await res.json();
-      message = body.detail ?? JSON.stringify(body);
-    } catch {
-      message = (await res.text()) || message;
-    }
-    throw new ApiError(message, res.status);
+    throw new ApiError(await readErrorMessage(res), res.status);
   }
   return res.json() as Promise<T>;
 }

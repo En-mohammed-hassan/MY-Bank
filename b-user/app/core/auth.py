@@ -10,7 +10,7 @@ from jose import JWTError, jwk, jwt
 from jose.exceptions import ExpiredSignatureError
 
 from app.config import settings
-from app.schemas.enums import BankStaffRole
+from app.schemas.enums import LEGACY_STAFF_ROLE_MAP, BankStaffRole
 
 _bearer = HTTPBearer(auto_error=True)
 
@@ -103,7 +103,13 @@ def _decode_token(token: str) -> dict[str, Any]:
 
 def _extract_roles(claims: dict[str, Any]) -> frozenset[str]:
     realm_roles = claims.get("realm_access", {}).get("roles", [])
-    return frozenset(realm_roles)
+    staff_values = {role.value for role in BankStaffRole}
+    normalized: set[str] = set()
+    for role in realm_roles:
+        mapped = LEGACY_STAFF_ROLE_MAP.get(role, role)
+        if mapped in staff_values:
+            normalized.add(mapped)
+    return frozenset(normalized)
 
 
 def get_current_user(

@@ -41,9 +41,16 @@ export function getSessionUser(): SessionUser | null {
 
   const realmAccess = claims.realm_access as { roles?: string[] } | undefined;
   const allRoles = realmAccess?.roles ?? [];
-  const staffRoles = allRoles.filter((r): r is StaffRole =>
-    ["admin", "supervisor", "retail"].includes(r),
-  );
+  const legacyMap: Record<string, StaffRole> = {
+    platform_admin: "admin",
+    bank_admin: "admin",
+    bank_support: "supervisor",
+    bank_auditor: "supervisor",
+    relationship_manager: "retail",
+  };
+  const staffRoles = allRoles
+    .map((r) => (legacyMap[r] ?? r) as string)
+    .filter((r): r is StaffRole => ["admin", "supervisor", "retail"].includes(r));
 
   return {
     username:
