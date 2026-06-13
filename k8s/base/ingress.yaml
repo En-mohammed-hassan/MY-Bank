@@ -58,6 +58,16 @@ spec:
                 name: bank-dashboard
                 port:
                   name: http
+    - host: user-dashboard.dental-care.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: user-dashboard
+                port:
+                  name: http
   # tls:
   #   - hosts:
   #       - core-api.dental-care.me

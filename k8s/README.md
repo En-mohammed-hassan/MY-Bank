@@ -49,6 +49,7 @@ Each service keeps its **own database** on a shared Postgres instance. **Keycloa
 | `https://customer-api.dental-care.me` | Direct to c-user (retail customer API) |
 | `https://auth.dental-care.me` | Keycloak (IdP, Docker host) |
 | `https://dashboard.dental-care.me` | Staff web UI (`bank-dashboard`) |
+| `https://user-dashboard.dental-care.me` | Customer portal UI (`user-dashboard`) |
 | `https://kube.dental-care.me` | Kubernetes cluster admin UI |
 
 Point DNS `api.dental-care.me` to the host running `docker compose` in `apim/wso2/`.

@@ -1,0 +1,12 @@
+# NEXT_PUBLIC_* are baked into the image at docker build time.
+# This ConfigMap documents runtime URLs for ops; rebuild image to change client API URLs.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-dashboard-config
+  labels:
+    app.kubernetes.io/name: user-dashboard
+    app.kubernetes.io/part-of: my-bank
+data:
+  NEXT_PUBLIC_CUSTOMER_API_URL: https://customer-api.dental-care.me
+  NEXT_PUBLIC_CORE_API_URL: https://core-api.dental-care.me

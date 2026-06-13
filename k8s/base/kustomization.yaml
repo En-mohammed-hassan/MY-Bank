@@ -25,6 +25,9 @@ resources:
   - bank-dashboard/configmap.yaml
   - bank-dashboard/deployment.yaml
   - bank-dashboard/service.yaml
+  - user-dashboard/configmap.yaml
+  - user-dashboard/deployment.yaml
+  - user-dashboard/service.yaml
   - ingress.yaml
 
 images:
@@ -39,4 +42,7 @@ images:
     newTag: latest
   - name: ghcr.io/example/my-bank/bank-dashboard
     newName: ghcr.io/example/my-bank/bank-dashboard
+    newTag: latest
+  - name: ghcr.io/example/my-bank/user-dashboard
+    newName: ghcr.io/example/my-bank/user-dashboard
     newTag: latest
