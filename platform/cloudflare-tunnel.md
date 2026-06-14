@@ -23,6 +23,7 @@ Internet (HTTPS)
                     ├── users-api.*
                     ├── customer-api.*
                     ├── dashboard.*
+                    ├── user-dashboard.*
                     └── kube.*
 ```
 
@@ -39,6 +40,7 @@ Create **one published application per row**:
 | `users-api.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → bank-user |
 | `customer-api.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → c-user |
 | `dashboard.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → bank-dashboard (staff UI) |
+| `user-dashboard.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → user-dashboard (customer UI) |
 | `kube.dental-care.me` | `http://127.0.0.1:80` | k8s Ingress → Kubernetes Dashboard |
 
 ### If ingress is not on port 80
@@ -152,6 +154,7 @@ curl -skI https://api.dental-care.me/core-banking/1.0.0/health
 curl -sI https://core-api.dental-care.me/health
 curl -sI https://users-api.dental-care.me/health
 curl -sI https://dashboard.dental-care.me/login
+curl -sI https://user-dashboard.dental-care.me/login
 curl -skI https://kube.dental-care.me
 ```
 
