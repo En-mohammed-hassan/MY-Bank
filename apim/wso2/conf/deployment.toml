@@ -52,3 +52,8 @@ allow_credentials = false
 # Cloudflare terminates TLS on :443 — WSO2 must trust X-Forwarded-* from the tunnel.
 [transport.https.properties]
 proxyPort = 443
+
+# Forward the client's Bearer token to backends after gateway OAuth validation.
+# Without this, bank-user/core-banking receive no Authorization header and return 401.
+[apim.oauth_config]
+enable_outbound_auth_header = true

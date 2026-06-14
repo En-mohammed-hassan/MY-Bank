@@ -10,7 +10,7 @@ from jose import JWTError, jwk, jwt
 from jose.exceptions import ExpiredSignatureError
 
 from app.config import settings
-from app.schemas.enums import CustomerRole, StaffRole
+from app.schemas.enums import CustomerRole, StaffRole, normalize_staff_roles
 
 _bearer = HTTPBearer(auto_error=True)
 
@@ -140,7 +140,8 @@ def require_staff_roles(*allowed_roles: StaffRole):
     allowed = {role.value for role in allowed_roles}
 
     def _dependency(user: AuthenticatedUser = Depends(get_current_user)) -> AuthenticatedUser:
-        if not user.roles.intersection(allowed):
+        staff_roles = normalize_staff_roles(list(user.roles))
+        if not staff_roles.intersection(allowed):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",

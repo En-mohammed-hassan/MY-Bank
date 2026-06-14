@@ -11,7 +11,7 @@ from app.schemas.customer import (
     CustomerResponse,
     CustomerSelfUpdateRequest,
 )
-from app.schemas.enums import CustomerRole, StaffRole
+from app.schemas.enums import CustomerRole, StaffRole, normalize_staff_roles
 from app.services.customer_profile_service import (
     CustomerAlreadyExistsError,
     CustomerNotFoundError,
@@ -96,7 +96,9 @@ def get_customer(
     except CustomerNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
-    staff_ok = user.roles.intersection({StaffRole.ADMIN.value, StaffRole.SUPERVISOR.value})
+    staff_ok = normalize_staff_roles(list(user.roles)).intersection(
+        {StaffRole.ADMIN.value, StaffRole.SUPERVISOR.value}
+    )
     self_ok = profile.keycloak_user_id == user.keycloak_user_id
     if not staff_ok and not self_ok:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
