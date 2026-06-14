@@ -8,6 +8,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p public
 
 ARG NEXT_PUBLIC_USERS_API_URL=https://users-api.dental-care.me
 ARG NEXT_PUBLIC_CORE_API_URL=https://core-api.dental-care.me
